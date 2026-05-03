@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trạm 1: Xây Nhà Chữ Số - Phiêu lưu cùng Robo Phẩy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #e0f2fe;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+            overscroll-behavior-y: none; /* Ngăn scroll nảy trên mobile */
+        }
+
+        /* Animations */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(5%); }
+        }
+        .animate-bounce-slow { animation: bounce-slow 3s infinite; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+        .shake-error { animation: shake 0.5s; border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+        .success-flash { animation: pulse-green 1s; }
+        
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        /* Drag & Drop Styles */
+        .digit-card {
+            cursor: grab;
+            transition: transform 0.1s, box-shadow 0.1s;
+            touch-action: none; /* Rất quan trọng để kéo thả mobile hoạt động */
+            will-change: transform;
+        }
+        .digit-card:active { cursor: grabbing; transform: scale(1.1); }
+        .drop-zone {
+            transition: all 0.3s;
+        }
+        .drop-zone.drag-over {
+            background-color: #fef08a;
+            border-color: #eab308;
+            transform: scale(1.05);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Mascot Speech Bubble */
+        .speech-bubble {
+            position: relative;
+            background: white;
+            border-radius: .4em;
+        }
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            width: 0;
+            height: 0;
+            border: 15px solid transparent;
+            border-top-color: white;
+            border-bottom: 0;
+            border-left: 0;
+            margin-left: -10px;
+            margin-bottom: -15px;
+        }
+
+        /* UI Components - Auto scale text and padding on smaller devices */
+        .btn-primary { @apply bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#2563eb] active:shadow-[0_0px_0_#2563eb] active:translate-y-1 transition-all text-sm sm:text-lg; }
+        .btn-secondary { @apply bg-orange-400 hover:bg-orange-500 text-white font-bold py-2 px-3 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#c2410c] active:shadow-[0_0px_0_#c2410c] active:translate-y-1 transition-all text-sm sm:text-lg; }
+        
+        .part-nguyen { @apply bg-blue-100 border-2 border-blue-400 rounded-lg sm:rounded-xl p-1 sm:p-2 text-center; }
+        .part-thapphan { @apply bg-orange-100 border-2 border-orange-400 rounded-lg sm:rounded-xl p-1 sm:p-2 text-center; }
+    </style>
+</head>
+<body class="h-[100dvh] flex flex-col items-center justify-center relative overflow-hidden bg-blue-50 sm:bg-[#e0f2fe]">
+
+    <!-- Global Header (Audio Controls & Logo) -->
+    <!-- Thêm backdrop-blur và bg-white/80 trên mobile để chữ không bị rối khi scroll -->
+    <div class="absolute sm:fixed top-0 w-full sm:max-w-4xl p-2 sm:p-4 flex justify-between items-center z-50 bg-white/90 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none border-b sm:border-none border-gray-200">
+        <div class="flex items-center gap-2 cursor-pointer shrink-0" id="teacher-trigger" onclick="handleTeacherTrigger()">
+            <div class="bg-blue-100 sm:bg-white p-2 rounded-full shadow-sm sm:shadow-md flex items-center justify-center"><i class="fa-solid fa-city text-blue-500 text-base sm:text-xl"></i></div>
+            <span class="font-extrabold text-blue-800 tracking-wider text-sm sm:text-lg drop-shadow-sm line-clamp-1 max-w-[140px] sm:max-w-none">THÀNH PHỐ SỐ</span>
+        </div>
+        <div class="flex gap-2 shrink-0">
+            <button id="btn-audio-toggle" class="bg-gray-100 sm:bg-white p-2 sm:p-3 rounded-full shadow-sm sm:shadow-md text-gray-600 hover:text-blue-500 transition w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center" onclick="toggleGlobalAudio()">
+                <i class="fa-solid fa-volume-high text-sm sm:text-xl"></i>
+            </button>
+            <button class="bg-gray-100 sm:bg-white p-2 sm:p-3 rounded-full shadow-sm sm:shadow-md text-gray-600 hover:text-green-500 transition w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center" onclick="speakText('Hãy đọc kĩ đề bài và làm theo hướng dẫn của tớ nhé!')">
+                <i class="fa-solid fa-circle-info text-sm sm:text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <!-- Bỏ overflow-hidden để trên mobile nếu quá dài vẫn có thể scroll tự nhiên phần lõi bên trong -->
+    <div id="app-container" class="w-full h-[100dvh] sm:max-w-4xl sm:h-[90vh] bg-white sm:rounded-3xl shadow-none sm:shadow-2xl relative flex flex-col pt-[50px] sm:pt-0">
+        <!-- Screens will be injected here -->
+    </div>
+
+    <!-- Teacher Mode Modal (Hidden by default) -->
+    <div id="teacher-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-3xl h-[90vh] sm:h-[80vh] rounded-2xl p-4 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg sm:text-2xl font-bold text-gray-800"><i class="fa-solid fa-chalkboard-user mr-2"></i>Chế độ Giáo Viên</h2>
+                <button onclick="closeTeacherMode()" class="text-gray-500 hover:text-red-500 text-xl sm:text-2xl"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <div class="flex border-b mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button class="px-3 py-2 font-bold text-sm sm:text-base text-blue-600 border-b-2 border-blue-600" onclick="switchTeacherTab('stats')">Thống kê</button>
+                <button class="px-3 py-2 font-bold text-sm sm:text-base text-gray-500 hover:text-blue-600" onclick="switchTeacherTab('errors')">Lỗi phổ biến</button>
+                <button class="px-3 py-2 font-bold text-sm sm:text-base text-gray-500 hover:text-blue-600" onclick="switchTeacherTab('objectives')">Mục tiêu</button>
+            </div>
+
+            <div id="tab-stats" class="flex-1 overflow-y-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-blue-50 p-3 sm:p-4 rounded-xl border border-blue-200">
+                        <p class="text-xs sm:text-sm text-blue-600 font-bold">Số phiên học</p>
+                        <p class="text-2xl sm:text-3xl font-black text-blue-800" id="tm-sessions">0</p>
+                    </div>
+                    <div class="bg-green-50 p-3 sm:p-4 rounded-xl border border-green-200">
+                        <p class="text-xs sm:text-sm text-green-600 font-bold">Điểm trung bình</p>
+                        <p class="text-2xl sm:text-3xl font-black text-green-800" id="tm-avg-score">0</p>
+                    </div>
+                    <div class="bg-orange-50 p-3 sm:p-4 rounded-xl border border-orange-200">
+                        <p class="text-xs sm:text-sm text-orange-600 font-bold">Tổng số lỗi</p>
+                        <p class="text-2xl sm:text-3xl font-black text-orange-800" id="tm-total-errors">0</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm flex items-center justify-center flex-1 sm:flex-none" onclick="exportData('json')"><i class="fa-solid fa-file-export mr-1 sm:mr-2"></i>Xuất JSON</button>
+                    <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 sm:px-4 rounded text-sm flex items-center justify-center flex-1 sm:flex-none" onclick="resetData()"><i class="fa-solid fa-trash mr-1 sm:mr-2"></i>Xóa Data</button>
+                </div>
+            </div>
+
+            <div id="tab-errors" class="flex-1 overflow-y-auto hidden">
+                <ul class="space-y-2 sm:space-y-3" id="tm-error-list">
+                    <!-- Errors dynamically populated -->
+                </ul>
+            </div>
+
+             <div id="tab-objectives" class="flex-1 overflow-y-auto hidden">
+                <h3 class="font-bold text-base sm:text-lg mb-2">Mục tiêu Trạm 1:</h3>
+                <ul class="list-disc pl-5 mb-4 text-sm sm:text-base text-gray-700">
+                    <li>Nhận biết phần nguyên và phần thập phân.</li>
+                    <li>Hiểu giá trị theo vị trí hàng (phần mười, phần trăm, phần nghìn).</li>
+                    <li>Xử lý chính xác các số có chữ số 0 (VD: 4,05; 12,004).</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl border-4 border-blue-400">
+            <div class="text-5xl mb-4">🤖</div>
+            <h2 class="text-xl sm:text-2xl font-black text-blue-800 mb-6">Mật mã Trạm 1</h2>
+            <input type="password" id="api-password" class="w-full border-4 border-blue-200 rounded-2xl p-3 text-center text-xl font-bold mb-4 focus:outline-none focus:border-blue-500" placeholder="Mật khẩu..." autocomplete="off">
+            <div class="flex gap-3 w-full">
+                <button class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl sm:rounded-2xl transition" onclick="skipAuth()">Bỏ qua</button>
+                <button class="flex-1 btn-primary py-3 rounded-xl sm:rounded-2xl" onclick="unlockAPI()">Kích hoạt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- DATA & STATE MANAGEMENT ---
+        const APP_ID = 'robo_phay_tram1_v1';
+        let isAudioEnabled = true;
+        let currentScreenIndex = 0;
+        let currentStageErrors = 0; 
+        let isStageCompleted = false; 
+        let clickCountForTeacher = 0;
+        let teacherTimer = null;
+        
+        let gcpApiKey = null;
+        let currentAudio = null;
+
+        const ENCRYPTED_PAYLOAD = "YWRtaW58QUl6YVN5Q0hrZElrYy10WklZUGx5emdQTFZ3bXZSSk91T2toeWVF";
+
+        let sessionData = {
+            score: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0,
+            errorsLogged: [],
+            badges: [],
+            stageScores: {},
+            stageCorrect: {}
+        };
+
+        const SCREENS = [
+            { id: 'intro', type: 'intro' },
+            { id: 'explore', type: 'explore' },
+            { id: 'build_1', type: 'build', data: { numberStr: "4,05", desc: "Bốn phẩy không năm", whole: 1, dec: 2 } },
+            { id: 'build_2', type: 'build', data: { numberStr: "25,009", desc: "Hai mươi lăm phẩy không không chín", whole: 2, dec: 3 } },
+            { id: 'listen_1', type: 'listen', data: { audioText: "Không phẩy bảy mươi ba", answer: "0,73" } },
+            { id: 'listen_2', type: 'listen', data: { audioText: "Mười hai phẩy không không bốn", answer: "12,004" } },
+            { id: 'read_1', type: 'read', data: { numberStr: "116,715", options: ["Một trăm mười sáu phẩy bảy trăm mười lăm", "Một một sáu phẩy bảy một năm", "Mười mười sáu phẩy bảy mười lăm"], correctIndex: 0 } },
+            { id: 'boss', type: 'boss', data: { hint: "Phần nguyên có chữ số hàng chục là 3, đơn vị là 5. Phần thập phân có hàng phần mười là 6, hàng phần trăm là 2, hàng phần nghìn là 4.", answer: "35,624" } },
+            { id: 'summary', type: 'summary' }
+        ];
+
+        // --- AUDIO CONTROLLER ---
+        async function speakText(text) {
+            if (!isAudioEnabled) return;
+            let processedText = text.replace(/(\d),(\d)/g, '$1 phẩy $2');
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+
+            if (gcpApiKey) {
+                try {
+                    const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${gcpApiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ input: { text: processedText }, voice: { languageCode: 'vi-VN', name: 'vi-VN-Neural2-A' }, audioConfig: { audioEncoding: 'MP3', speakingRate: 0.9, pitch: 3.0 } })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        currentAudio = new Audio("data:audio/mp3;base64," + data.audioContent);
+                        const playPromise = currentAudio.play();
+                        if (playPromise !== undefined) playPromise.catch(error => { if (error.name !== 'AbortError') console.error(error); });
+                        return;
+                    }
+                } catch (e) { console.error("Lỗi Google TTS API:", e); }
+            }
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(processedText);
+                msg.lang = 'vi-VN'; msg.rate = 0.9; msg.pitch = 1.1;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function toggleGlobalAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            const icon = document.querySelector('#btn-audio-toggle i');
+            if (isAudioEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-sm sm:text-xl';
+                speakText("Đã bật âm thanh.");
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-sm sm:text-xl text-red-500';
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function playSFX(type) {
+            if (!isAudioEnabled) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode); gainNode.connect(ctx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(); osc.stop(ctx.currentTime + 0.5);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            }
+        }
+
+        // --- CORE LOGIC & RENDERER ---
+        function initApp() {
+            loadTeacherData();
+            renderScreen();
+        }
+
+        function nextScreen() {
+            currentStageErrors = 0;
+            if (currentScreenIndex < SCREENS.length - 1) { currentScreenIndex++; renderScreen(); }
+        }
+
+        function prevScreen() {
+            if (isStageCompleted) return;
+            if (currentScreenIndex > 0) { isStageCompleted = true; currentScreenIndex--; currentStageErrors = 0; renderScreen(); }
+        }
+
+        function skipQuestion() {
+            if (isStageCompleted) return;
+            isStageCompleted = true;
+            logError(SCREENS[currentScreenIndex].type, 'skipped', 'Học sinh đã bỏ qua thử thách này.');
+            sessionData.wrongAnswers++;
+            sessionData.stageScores[currentScreenIndex] = 0;
+            sessionData.stageCorrect[currentScreenIndex] = 0;
+            sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0);
+            sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+            nextScreen();
+        }
+
+        function renderScreen() {
+            isStageCompleted = false;
+            const container = document.getElementById('app-container');
+            const screenData = SCREENS[currentScreenIndex];
+            container.innerHTML = '';
+            
+            switch (screenData.type) {
+                case 'intro': renderIntro(container); break;
+                case 'explore': renderExplore(container); break;
+                case 'build': renderBuild(container, screenData.data); break;
+                case 'listen': renderListen(container, screenData.data); break;
+                case 'read': renderRead(container, screenData.data); break;
+                case 'boss': renderBoss(container, screenData.data); break;
+                case 'summary': renderSummary(container); break;
+            }
+        }
+
+        // --- SCREEN RENDERS ---
+
+        function renderIntro(container) {
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 sm:pt-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNiYmU1ZWQiLz48L3N2Zz4=')]">
+                    <div class="text-6xl sm:text-7xl mb-4 animate-bounce-slow">🤖</div>
+                    <div class="speech-bubble p-4 sm:p-6 mb-6 sm:mb-8 text-center max-w-lg shadow-lg border-4 border-blue-200 mx-2">
+                        <h1 class="text-xl sm:text-3xl font-black text-blue-600 mb-2">Chào cậu! Tớ là Robo Phẩy.</h1>
+                        <p class="text-gray-700 text-sm sm:text-lg font-medium">Cậu đã sẵn sàng khám phá <span class="text-orange-500 font-bold">Thành phố Số thập phân</span> chưa? Cùng tớ tìm đúng ngôi nhà cho các chữ số nhé!</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0 max-w-xs sm:max-w-none">
+                        <button class="btn-primary flex items-center justify-center gap-2" onclick="speakText('Chào cậu! Tớ là Robo Phẩy. Cậu đã sẵn sàng khám phá Thành phố Số thập phân chưa? Cùng tớ tìm đúng ngôi nhà cho các chữ số nhé!');"><i class="fa-solid fa-ear-listen"></i> Nghe cô giới thiệu</button>
+                        <button class="btn-secondary flex items-center justify-center gap-2" onclick="nextScreen()">Bắt đầu ngay <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderExplore(container) {
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 sm:pt-20 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h2 class="text-lg sm:text-2xl font-bold text-gray-800"><i class="fa-solid fa-magnifying-glass text-blue-500 mr-2"></i> Khám phá Nhà số</h2>
+                        <button class="text-gray-500 hover:text-blue-500" onclick="speakText('Bấm vào từng chữ số để xem tên ngôi nhà của nó nhé.')"><i class="fa-solid fa-circle-question text-xl sm:text-2xl"></i></button>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-2xl p-3 sm:p-6 border-2 border-dashed border-blue-300 flex-1 flex flex-col items-center justify-center min-h-0 relative">
+                        <p class="mb-2 sm:mb-4 text-gray-600 font-bold text-xs sm:text-lg shrink-0">Số mẫu: 35,624</p>
+                        
+                        <div class="flex items-end justify-center gap-1 sm:gap-2 text-xl sm:text-3xl font-black mb-4 sm:mb-8 flex-wrap w-full flex-1 content-center">
+                            <!-- Phần nguyên -->
+                            <div class="flex flex-col items-center gap-1 sm:gap-2 part-nguyen cursor-pointer hover:bg-blue-200 w-11 sm:w-auto shrink-0" onclick="showExploreHint('Số 3 đứng ở hàng chục. Thuộc phần nguyên nhé.', 'blue')">
+                                <span class="text-[9px] sm:text-sm text-blue-600 whitespace-nowrap">H.chục</span>
+                                <span>3</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 sm:gap-2 part-nguyen cursor-pointer hover:bg-blue-200 w-11 sm:w-auto shrink-0" onclick="showExploreHint('Số 5 đứng ở hàng đơn vị. Nằm ngay sát dấu phẩy luôn!', 'blue')">
+                                <span class="text-[9px] sm:text-sm text-blue-600 whitespace-nowrap">H.đ.vị</span>
+                                <span>5</span>
+                            </div>
+                            
+                            <!-- Dấu phẩy -->
+                            <div class="flex flex-col items-center justify-end h-full pb-1 sm:pb-2 px-1 cursor-pointer shrink-0" onclick="showExploreHint('Dấu phẩy đây rồi! Ranh giới ngăn cách phần nguyên và phần thập phân!', 'gray')">
+                                <span class="text-red-500 text-3xl sm:text-5xl">,</span>
+                            </div>
+
+                            <!-- Phần thập phân -->
+                            <div class="flex flex-col items-center gap-1 sm:gap-2 part-thapphan cursor-pointer hover:bg-orange-200 w-12 sm:w-auto shrink-0" onclick="showExploreHint('Qua dấu phẩy là phần thập phân. Số 6 đang ở hàng phần mười.', 'orange')">
+                                <span class="text-[8px] sm:text-sm text-orange-600 whitespace-nowrap">P.mười</span>
+                                <span>6</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 sm:gap-2 part-thapphan cursor-pointer hover:bg-orange-200 w-12 sm:w-auto shrink-0" onclick="showExploreHint('Tiếp theo là số 2. Bạn ấy thuộc hàng phần trăm nha.', 'orange')">
+                                <span class="text-[8px] sm:text-sm text-orange-600 whitespace-nowrap">P.trăm</span>
+                                <span>2</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 sm:gap-2 part-thapphan cursor-pointer hover:bg-orange-200 w-12 sm:w-auto shrink-0" onclick="showExploreHint('Cuối cùng là số 4 nhỏ nhắn ở hàng phần nghìn.', 'orange')">
+                                <span class="text-[8px] sm:text-sm text-orange-600 whitespace-nowrap">P.nghìn</span>
+                                <span>4</span>
+                            </div>
+                        </div>
+
+                        <div id="explore-feedback" class="h-auto min-h-[3rem] sm:min-h-[3.5rem] py-2 px-3 sm:px-4 text-xs sm:text-xl font-bold text-center w-full max-w-md rounded-xl flex items-center justify-center text-gray-500 bg-white shadow-sm border transition-colors shrink-0">
+                            Bấm vào các số ở trên để xem vị trí của chúng nhé!
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between gap-2 shrink-0">
+                        <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-1 transition-all text-sm sm:text-lg flex items-center gap-1" onclick="prevScreen()"><i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Quay lại</span></button>
+                        <button class="btn-primary flex-1 sm:flex-none flex items-center justify-center gap-2" onclick="nextScreen()">Tiếp tục <i class="fa-solid fa-check"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showExploreHint(text, color) {
+            const fb = document.getElementById('explore-feedback');
+            fb.innerText = text;
+            fb.className = `h-auto min-h-[3rem] sm:min-h-[3.5rem] py-2 px-3 sm:px-4 text-xs sm:text-xl font-bold text-center w-full max-w-md rounded-xl flex items-center justify-center shadow-sm border transition-colors shrink-0 ${
+                color === 'blue' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                color === 'orange' ? 'bg-orange-100 text-orange-700 border-orange-300' :
+                'bg-gray-100 text-gray-700 border-gray-300'
+            }`;
+            speakText(text);
+        }
+
+        function renderBuild(container, data) {
+            const digits = data.numberStr.replace(',', '').split('');
+            const shuffledDigits = [...digits].sort(() => Math.random() - 0.5);
+            
+            let wholeSlots = '';
+            for(let i=0; i<data.whole; i++) wholeSlots += `<div class="drop-zone part-nguyen w-10 h-12 sm:w-16 sm:h-16 flex items-center justify-center text-xl sm:text-3xl font-black bg-white" data-expected="${digits[i]}"></div>`;
+            
+            let decSlots = '';
+            for(let i=0; i<data.dec; i++) decSlots += `<div class="drop-zone part-thapphan w-10 h-12 sm:w-16 sm:h-16 flex items-center justify-center text-xl sm:text-3xl font-black bg-white" data-expected="${digits[data.whole + i]}"></div>`;
+
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 sm:pt-20 overflow-y-auto">
+                     <div class="flex justify-between items-center mb-2 shrink-0">
+                        <h2 class="text-lg sm:text-2xl font-bold text-gray-800"><i class="fa-solid fa-trowel-bricks text-blue-500 mr-2"></i> Kéo thả số</h2>
+                        <button class="text-gray-500 hover:text-green-500 shrink-0" onclick="speakText('${data.desc}')"><i class="fa-solid fa-ear-listen text-xl sm:text-2xl"></i></button>
+                    </div>
+
+                    <div class="flex flex-col my-auto py-2 shrink-0 w-full">
+                        <div class="text-center mb-4 sm:mb-6 bg-blue-50 p-2 sm:p-4 rounded-xl shadow-sm border border-blue-100 relative mt-3 sm:mt-5 mx-2">
+                            <div class="absolute -top-5 sm:-top-6 left-1/2 transform -translate-x-1/2 text-2xl sm:text-4xl">🤖</div>
+                            <p class="text-sm sm:text-xl font-bold text-blue-800 mt-1 sm:mt-2">"${data.desc}"</p>
+                        </div>
+
+                        <!-- Target House -->
+                        <div class="flex justify-center items-end gap-1 sm:gap-3 mb-4 sm:mb-6 bg-gray-50 py-4 sm:py-8 px-2 rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300 shadow-inner min-h-[80px]" id="build-house">
+                            ${wholeSlots}
+                            <div class="text-red-500 text-3xl sm:text-6xl font-black pb-1 sm:pb-2 leading-none">,</div>
+                            ${decSlots}
+                        </div>
+
+                        <!-- Source Digits -->
+                        <div class="flex justify-center gap-2 sm:gap-4 bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow border border-gray-100 flex-wrap min-h-[70px]" id="digit-dock">
+                            ${shuffledDigits.map(d => `<div class="digit-card w-10 h-12 sm:w-14 sm:h-14 bg-gray-800 text-white rounded-lg shadow-md flex items-center justify-center text-xl sm:text-3xl font-black" draggable="true">${d}</div>`).join('')}
+                        </div>
+
+                        <div id="build-feedback" class="mt-3 sm:mt-4 text-center text-xs sm:text-lg font-bold min-h-[2rem] text-red-500 px-1"></div>
+                    </div>
+
+                    <div class="mt-auto pt-2 flex justify-between items-center w-full gap-2 shrink-0">
+                        <div class="flex gap-2">
+                            <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-1 transition-all text-sm sm:text-lg flex items-center" onclick="prevScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+                            <button class="bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#d1d5db] active:shadow-[0_0px_0_#d1d5db] active:translate-y-1 transition-all text-xs sm:text-lg hidden sm:block" onclick="skipQuestion()">Bỏ qua</button>
+                        </div>
+                        <button class="btn-primary flex-1 sm:flex-none flex items-center justify-center gap-1" onclick="checkBuildTarget('${data.numberStr}')">Kiểm tra <i class="fa-solid fa-check"></i></button>
+                    </div>
+                </div>
+            `;
+            initDragAndDrop();
+            setTimeout(() => speakText(`Hãy xây nhà cho số: ${data.desc}`), 500);
+        }
+
+        function initDragAndDrop() {
+            const draggables = document.querySelectorAll('.digit-card');
+            const dropZones = document.querySelectorAll('.drop-zone');
+            const dock = document.getElementById('digit-dock');
+            let draggedItem = null;
+
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', function(e) {
+                    draggedItem = this; setTimeout(() => this.style.opacity = '0.5', 0);
+                });
+                draggable.addEventListener('dragend', function() {
+                    setTimeout(() => { this.style.opacity = '1'; draggedItem = null; }, 0);
+                });
+
+                // Fallback click cho di động & PC
+                draggable.addEventListener('click', function(e) {
+                    if (this.dataset.preventClick === 'true') { this.dataset.preventClick = 'false'; return; }
+                    if (this.parentElement === dock) {
+                        const emptyZone = Array.from(dropZones).find(z => z.children.length === 0);
+                        if(emptyZone) emptyZone.appendChild(this);
+                    } else { dock.appendChild(this); }
+                });
+
+                // Touch Events
+                let initialX, initialY;
+                draggable.addEventListener('touchstart', function(e) {
+                    draggedItem = this;
+                    const touch = e.targetTouches[0];
+                    initialX = touch.clientX; initialY = touch.clientY;
+                    this.style.opacity = '0.7'; this.dataset.preventClick = 'false';
+                }, {passive: false});
+
+                draggable.addEventListener('touchmove', function(e) {
+                    if (!draggedItem) return;
+                    e.preventDefault(); 
+                    const touch = e.targetTouches[0];
+                    const deltaX = touch.clientX - initialX; const deltaY = touch.clientY - initialY;
+                    this.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                    this.style.zIndex = '1000';
+
+                    this.style.visibility = 'hidden'; 
+                    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    this.style.visibility = 'visible';
+
+                    dropZones.forEach(z => z.classList.remove('drag-over'));
+                    if (elemBelow && elemBelow.closest('.drop-zone')) elemBelow.closest('.drop-zone').classList.add('drag-over');
+                }, {passive: false});
+
+                draggable.addEventListener('touchend', function(e) {
+                    if (!draggedItem) return;
+                    const touch = e.changedTouches[0];
+                    const deltaX = Math.abs(touch.clientX - initialX); const deltaY = Math.abs(touch.clientY - initialY);
+                    
+                    if (deltaX > 5 || deltaY > 5) this.dataset.preventClick = 'true';
+
+                    this.style.visibility = 'hidden';
+                    const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    this.style.visibility = 'visible';
+                    this.style.transform = ''; this.style.zIndex = ''; this.style.opacity = '1';
+
+                    dropZones.forEach(z => z.classList.remove('drag-over'));
+                    const targetZone = elemBelow ? elemBelow.closest('.drop-zone') : null;
+
+                    if (targetZone) {
+                        if (targetZone.children.length > 0) dock.appendChild(targetZone.children[0]);
+                        targetZone.appendChild(this);
+                    } else if (deltaX > 5 || deltaY > 5) { dock.appendChild(this); }
+                    draggedItem = null;
+                });
+            });
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                zone.addEventListener('drop', function(e) {
+                    e.preventDefault(); this.classList.remove('drag-over');
+                    if (draggedItem) {
+                        if (this.children.length > 0) dock.appendChild(this.children[0]);
+                        this.appendChild(draggedItem);
+                    }
+                });
+            });
+            
+            dock.addEventListener('dragover', e => e.preventDefault());
+            dock.addEventListener('drop', function(e) {
+                e.preventDefault(); if(draggedItem) this.appendChild(draggedItem);
+            });
+        }
+
+        function checkBuildTarget(correctNumberStr) {
+            if (isStageCompleted) return;
+            const zones = document.querySelectorAll('.drop-zone');
+            let currentStr = ""; let isFull = true; let firstErrorIndex = -1;
+
+            zones.forEach((zone, index) => {
+                if (zone.children.length === 0) isFull = false;
+                else {
+                    const val = zone.children[0].innerText; currentStr += val;
+                    if (val !== zone.getAttribute('data-expected') && firstErrorIndex === -1) firstErrorIndex = index;
+                }
+            });
+
+            const feedback = document.getElementById('build-feedback');
+
+            if (!isFull) {
+                feedback.innerText = "Cậu nhớ đặt hết các chữ số vào ô trống nhé!";
+                speakText("Cậu chưa xếp xong kìa, nhớ đặt hết các số vào ô trống nhé.");
+                return;
+            }
+
+            const correctDigits = correctNumberStr.replace(',', '');
+            if (currentStr === correctDigits) {
+                isStageCompleted = true; playSFX('correct');
+                let pointsEarned = 10; if (currentStageErrors === 1) pointsEarned = 8; if (currentStageErrors >= 2) pointsEarned = 5;
+
+                feedback.innerHTML = `<span class="text-green-500">Chính xác! (+${pointsEarned}đ) ⭐</span>`;
+                speakText("Hoan hô! Cậu làm rất chính xác!");
+                sessionData.stageScores[currentScreenIndex] = pointsEarned; sessionData.stageCorrect[currentScreenIndex] = 1;
+                sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0); sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+
+                document.getElementById('build-house').classList.add('success-flash');
+                setTimeout(() => nextScreen(), 2500);
+            } else {
+                playSFX('wrong'); currentStageErrors++; sessionData.wrongAnswers++;
+                document.getElementById('build-house').classList.add('shake-error');
+                setTimeout(() => document.getElementById('build-house').classList.remove('shake-error'), 500);
+
+                if (currentStageErrors === 1) {
+                    feedback.innerText = "Chưa đúng vị trí rồi, hãy kiểm tra lại! 🤔"; speakText("Chưa đúng vị trí rồi, cậu kiểm tra lại cẩn thận nhé.");
+                } else if (currentStageErrors === 2) {
+                    let part = firstErrorIndex < correctNumberStr.indexOf(',') ? "Phần nguyên" : "Phần thập phân";
+                    feedback.innerText = `Gợi ý nè: Xem kĩ lại ${part} nha. 🔍`; speakText(`Gợi ý nè: Cậu hãy xem kĩ lại ${part} xem có đặt nhầm số nào không nha.`);
+                    logError('build', 'wrong_position_tier2', `Lỗi sai ở ${part} số ${correctNumberStr}`);
+                } else {
+                    const expectedDigit = correctDigits[firstErrorIndex];
+                    let positionName = getPositionName(correctNumberStr, firstErrorIndex);
+                    feedback.innerHTML = `Để tớ giúp! Ở <span class="font-bold text-blue-600">${positionName}</span> là chữ số <span class="font-bold text-xl">${expectedDigit}</span>. 💡`;
+                    speakText(`Để tớ giúp cậu nhé. Ở ${positionName} phải là chữ số ${expectedDigit} cơ. Cậu nhớ nhé!`);
+                    logError('build', 'wrong_position_tier3', `Sai nhiều lần tại số ${correctNumberStr}`);
+                }
+            }
+            saveTeacherData();
+        }
+
+        function getPositionName(numberStr, digitIndex) {
+            const parts = numberStr.split(','); const wholeLen = parts[0].length;
+            if (digitIndex < wholeLen) {
+                const diff = wholeLen - digitIndex;
+                if (diff === 1) return "hàng đơn vị"; if (diff === 2) return "hàng chục"; if (diff === 3) return "hàng trăm";
+            } else {
+                const decIndex = digitIndex - wholeLen;
+                if (decIndex === 0) return "hàng phần mười"; if (decIndex === 1) return "hàng phần trăm"; if (decIndex === 2) return "hàng phần nghìn";
+            }
+            return "hàng này";
+        }
+
+        function renderListen(container, data) {
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center p-4 sm:p-8 sm:pt-20 overflow-y-auto w-full">
+                    <h2 class="text-lg sm:text-2xl font-bold text-gray-800 mb-2 shrink-0 self-start"><i class="fa-solid fa-headphones text-blue-500 mr-2"></i> Lắng nghe & Ghi chép</h2>
+                    
+                    <div class="flex flex-col items-center w-full my-auto py-4 shrink-0">
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 mb-4 sm:mb-8 shrink-0" onclick="speakText('${data.audioText}')">
+                            <i class="fa-solid fa-volume-high text-2xl sm:text-4xl"></i>
+                        </button>
+
+                        <div class="w-full max-w-sm mb-2 px-2 shrink-0">
+                            <input type="text" id="listen-input" class="w-full border-4 border-blue-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center text-2xl sm:text-4xl font-black text-gray-800 focus:outline-none focus:border-blue-500 transition-colors" placeholder="Gõ số..." autocomplete="off">
+                        </div>
+                        
+                        <p class="text-xs sm:text-sm text-gray-500 mb-2 text-center shrink-0">(Dùng dấu phẩy hoặc chấm)</p>
+                        <div id="listen-feedback" class="h-8 sm:h-10 text-sm sm:text-lg font-bold text-red-500 text-center mb-2 px-2 w-full shrink-0"></div>
+                    </div>
+
+                    <div class="w-full max-w-sm flex gap-2 sm:gap-3 mt-auto pt-2 shrink-0 px-2 sm:px-0">
+                        <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 sm:py-3 px-4 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-1 transition-all text-sm sm:text-lg" onclick="prevScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button class="bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-2 sm:py-3 px-4 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#d1d5db] active:shadow-[0_0px_0_#d1d5db] active:translate-y-1 transition-all text-xs sm:text-sm whitespace-nowrap" onclick="skipQuestion()">Bỏ qua</button>
+                        <button class="btn-primary flex-1 flex items-center justify-center gap-1" onclick="checkListenTarget('${data.answer}')">Chốt <i class="fa-solid fa-check"></i></button>
+                    </div>
+                </div>
+            `;
+            
+            const input = document.getElementById('listen-input');
+            input.addEventListener('input', function(e) {
+                if (this.value.includes('.')) this.value = this.value.replace(/\./g, ',');
+                this.value = this.value.replace(/[^0-9,]/g, '');
+                const parts = this.value.split(',');
+                if(parts.length > 2) this.value = parts[0] + ',' + parts.slice(1).join('');
+            });
+            input.addEventListener('keypress', function(e) { if(e.key === 'Enter') checkListenTarget(data.answer); });
+        }
+
+        function checkListenTarget(correctAnswer) {
+            if (isStageCompleted) return;
+            const input = document.getElementById('listen-input'); let userVal = input.value.trim();
+            const feedback = document.getElementById('listen-feedback');
+            if (!userVal) return;
+
+            if (userVal === correctAnswer) {
+                isStageCompleted = true; playSFX('correct'); input.classList.add('border-green-500', 'bg-green-50');
+                let pointsEarned = 10; if (currentStageErrors === 1) pointsEarned = 8; if (currentStageErrors >= 2) pointsEarned = 5;
+
+                feedback.innerHTML = `<span class="text-green-500">Chuẩn xác! (+${pointsEarned}đ) 🌟</span>`;
+                speakText("Tuyệt vời! Cậu làm rất tốt.");
+                sessionData.stageScores[currentScreenIndex] = pointsEarned; sessionData.stageCorrect[currentScreenIndex] = 1;
+                sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0); sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+                setTimeout(() => nextScreen(), 2000);
+            } else {
+                playSFX('wrong'); currentStageErrors++; sessionData.wrongAnswers++;
+                input.classList.add('shake-error'); setTimeout(() => input.classList.remove('shake-error'), 500);
+
+                if (currentStageErrors === 1) {
+                    feedback.innerText = "Chưa đúng rồi, hãy bấm loa nghe lại kĩ nhé. 🎧"; speakText("Chưa đúng rồi, cậu hãy nghe lại một lần nữa nhé.");
+                } else if (currentStageErrors === 2) {
+                    if (!userVal.includes(',')) { feedback.innerText = "Hình như quên mất dấu phẩy rồi! 🖍️"; speakText("Khoan đã, hình như cậu quên viết dấu phẩy rồi kìa."); logError('listen', 'missing_comma', `Quên dấu phẩy cho số ${correctAnswer}`); }
+                    else if (userVal.length < correctAnswer.length) { feedback.innerText = "Có viết thiếu chữ số 0 nào không? 🧐"; speakText("Cậu nhẩm lại xem mình có viết thiếu chữ số không nào không nhé."); logError('listen', 'missing_zero', `Thiếu số 0 ở số ${correctAnswer}`); }
+                    else { feedback.innerText = "Suýt đúng rồi! Kiểm tra lại phần thập phân. 🔍"; speakText("Suýt thì đúng rồi, cậu kiểm tra kĩ lại phần thập phân phía sau dấu phẩy nhé."); }
+                } else {
+                    isStageCompleted = true; feedback.innerText = `Số đúng là: ${correctAnswer}. ✨`; speakText(`Số đúng phải là ${correctAnswer}. Tớ sẽ điền giúp cậu nhé!`);
+                    input.value = correctAnswer; logError('listen', 'failed_listen', `Sai 3 lần số ${correctAnswer}`);
+                    sessionData.stageScores[currentScreenIndex] = 0; sessionData.stageCorrect[currentScreenIndex] = 0;
+                    sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0); sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+                    setTimeout(() => nextScreen(), 3500);
+                }
+            }
+            saveTeacherData();
+        }
+
+        function renderRead(container, data) {
+            const btnHtml = data.options.map((opt, idx) => `
+                <button class="w-full text-left p-3 sm:p-4 rounded-xl border-2 border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-400 text-sm sm:text-base md:text-lg text-gray-700 font-bold transition-all shrink-0 shadow-sm" onclick="checkReadTarget(${idx}, ${data.correctIndex}, this, '${data.numberStr}')">
+                    ${opt}
+                </button>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 sm:pt-20 overflow-y-auto w-full">
+                    <h2 class="text-lg sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6 shrink-0"><i class="fa-solid fa-book-open-reader text-blue-500 mr-2"></i> Đọc số thật chuẩn</h2>
+                    
+                    <div class="w-full flex flex-col my-auto py-2 shrink-0">
+                        <div class="text-center mb-4 shrink-0">
+                            <p class="text-xs sm:text-base text-gray-500 mb-2 font-bold">Số cần đọc:</p>
+                            <div class="text-3xl sm:text-5xl md:text-6xl font-black text-blue-600 bg-blue-50 py-3 sm:py-6 rounded-xl sm:rounded-2xl border border-blue-200 shadow-inner inline-block px-4 sm:px-12 max-w-full overflow-x-auto whitespace-nowrap">${data.numberStr}</div>
+                        </div>
+
+                        <div id="read-feedback" class="h-8 sm:h-10 text-xs sm:text-base text-center text-red-500 font-bold mb-2 shrink-0 px-2"></div>
+
+                        <div class="w-full max-w-2xl mx-auto flex flex-col gap-2 sm:gap-4 shrink-0 px-1">
+                            ${btnHtml}
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-4 flex justify-between w-full gap-2 shrink-0">
+                        <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-1 transition-all text-sm sm:text-lg flex items-center gap-1" onclick="prevScreen()"><i class="fa-solid fa-arrow-left"></i> <span class="hidden sm:inline">Quay lại</span></button>
+                        <button class="btn-primary flex-1 sm:flex-none flex items-center justify-center gap-1 bg-gray-400 hover:bg-gray-500 shadow-[0_4px_0_#6b7280] active:shadow-[0_0px_0_#6b7280]" onclick="skipQuestion()">Bỏ qua <i class="fa-solid fa-forward"></i></button>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => speakText(`Cậu chọn cách đọc đúng cho số ${data.numberStr} nhé.`), 500);
+        }
+
+        function checkReadTarget(selectedIndex, correctIndex, btnElement, numberStr) {
+            if (isStageCompleted) return;
+            const feedback = document.getElementById('read-feedback');
+            
+            if (selectedIndex === correctIndex) {
+                isStageCompleted = true; playSFX('correct');
+                let pointsEarned = 10; if (currentStageErrors === 1) pointsEarned = 8; if (currentStageErrors >= 2) pointsEarned = 5;
+
+                btnElement.classList.remove('border-blue-200', 'bg-white'); btnElement.classList.add('border-green-500', 'bg-green-100', 'text-green-800');
+                feedback.innerHTML = `<span class="text-green-500">Chính xác! (+${pointsEarned}đ) 🏆</span>`;
+                speakText("Chính xác! Cậu chọn rất đúng.");
+                sessionData.stageScores[currentScreenIndex] = pointsEarned; sessionData.stageCorrect[currentScreenIndex] = 1;
+                sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0); sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+                setTimeout(() => nextScreen(), 2000);
+            } else {
+                playSFX('wrong'); currentStageErrors++; sessionData.wrongAnswers++;
+                btnElement.classList.remove('border-blue-200'); btnElement.classList.add('shake-error');
+                setTimeout(() => btnElement.classList.remove('shake-error', 'border-red-500', 'bg-red-50'), 500);
+
+                if (currentStageErrors === 1) { feedback.innerText = "Chưa chính xác, chọn lại xem sao. 📖"; speakText("Cách đọc này chưa chính xác, cậu thử lại nhé."); }
+                else { feedback.innerText = "Gợi ý: Nhớ đọc rõ chữ 'phẩy' để ngăn cách phần nguyên và thập phân nhé. 💡"; speakText("Gợi ý cho cậu: Khi đọc số thập phân, nhất định phải đọc chữ 'phẩy' lên nhé."); logError('read', 'wrong_read_format', `Đọc sai số ${numberStr}`); }
+            }
+            saveTeacherData();
+        }
+
+        function renderBoss(container, data) {
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 sm:pt-20 bg-gradient-to-br from-purple-100 to-blue-100 relative overflow-y-auto w-full">
+                    <!-- Boss Icon bg -->
+                    <i class="fa-solid fa-crown text-purple-200 text-6xl sm:text-9xl absolute -right-2 -bottom-2 sm:-right-10 sm:-bottom-10 opacity-50 transform -rotate-12 pointer-events-none"></i>
+                    
+                    <h2 class="text-lg sm:text-2xl font-bold text-purple-800 mb-2 z-10 shrink-0"><i class="fa-solid fa-bolt text-yellow-500 mr-2"></i> Thử thách Kiến trúc sư</h2>
+                    
+                    <div class="w-full flex flex-col my-auto py-4 z-10 shrink-0">
+                        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-xl border-2 border-purple-300 mb-4 sm:mb-8 relative mx-2">
+                            <div class="absolute -top-4 -left-4 sm:-top-5 sm:-left-5 text-xl sm:text-4xl bg-yellow-400 rounded-full w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center shadow-lg border-2 border-white text-white">⭐</div>
+                            <p class="text-sm sm:text-lg text-gray-700 font-bold leading-relaxed">"${data.hint}"</p>
+                            <button class="mt-2 sm:mt-4 text-purple-500 hover:text-purple-700 font-bold text-xs sm:text-sm flex items-center gap-1" onclick="speakText('${data.hint}')">
+                                <i class="fa-solid fa-circle-play"></i> Đọc lại
+                            </button>
+                        </div>
+
+                        <div class="w-full max-w-sm mx-auto mb-2 px-2">
+                            <input type="text" id="boss-input" class="w-full border-4 border-purple-300 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center text-3xl sm:text-4xl font-black text-gray-800 focus:outline-none focus:border-purple-600 transition-colors" placeholder="Nhập số..." autocomplete="off">
+                        </div>
+                        
+                        <div id="boss-feedback" class="h-8 sm:h-10 text-xs sm:text-lg font-bold text-red-500 text-center mb-2 px-2 w-full"></div>
+                    </div>
+
+                    <div class="z-10 mt-auto pt-2 flex justify-between items-center w-full gap-2 shrink-0">
+                        <div class="flex gap-2">
+                            <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#9ca3af] active:shadow-[0_0px_0_#9ca3af] active:translate-y-1 transition-all text-sm sm:text-lg" onclick="prevScreen()"><i class="fa-solid fa-arrow-left"></i></button>
+                            <button class="bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-2 sm:py-3 px-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#d1d5db] active:shadow-[0_0px_0_#d1d5db] active:translate-y-1 transition-all text-xs sm:text-sm hidden sm:block" onclick="skipQuestion()">Bỏ qua</button>
+                        </div>
+                        <button class="btn-primary bg-purple-600 hover:bg-purple-700 shadow-[0_4px_0_#6b21a8] active:shadow-[0_0px_0_#6b21a8] px-4 sm:px-8 flex-1 sm:flex-none flex items-center justify-center gap-1" onclick="checkBossTarget('${data.answer}')">Mở khóa <i class="fa-solid fa-key"></i></button>
+                    </div>
+                </div>
+            `;
+            
+            const input = document.getElementById('boss-input');
+            input.addEventListener('input', function(e) {
+                if (this.value.includes('.')) this.value = this.value.replace(/\./g, ',');
+                this.value = this.value.replace(/[^0-9,]/g, '');
+            });
+            input.addEventListener('keypress', function(e) { if(e.key === 'Enter') checkBossTarget(data.answer); });
+            setTimeout(() => speakText("Thử thách cuối cùng. Cậu hãy đọc kĩ mật thư để tìm ra con số bí ẩn nhé!"), 500);
+        }
+
+        function checkBossTarget(correctAnswer) {
+            if (isStageCompleted) return;
+            const input = document.getElementById('boss-input'); let userVal = input.value.trim();
+            const feedback = document.getElementById('boss-feedback');
+            if (!userVal) return;
+
+            if (userVal === correctAnswer) {
+                isStageCompleted = true; playSFX('correct');
+                let pointsEarned = 20; if (currentStageErrors === 1) pointsEarned = 15; if (currentStageErrors >= 2) pointsEarned = 10;
+
+                feedback.innerHTML = `<span class="text-green-600">Tuyệt cú mèo! Mở khóa thành công! (+${pointsEarned}đ) 👑</span>`;
+                speakText("Xuất sắc! Cậu đã giải được mật mã và trở thành Kiến trúc sư thực thụ rồi.");
+                sessionData.stageScores[currentScreenIndex] = pointsEarned; sessionData.stageCorrect[currentScreenIndex] = 1;
+                sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0); sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+                sessionData.badges.push("Kiến trúc sư Số thập phân");
+                setTimeout(() => nextScreen(), 3000);
+            } else {
+                playSFX('wrong'); currentStageErrors++; sessionData.wrongAnswers++;
+                input.classList.add('shake-error'); setTimeout(() => input.classList.remove('shake-error'), 500);
+
+                if (currentStageErrors === 1) { feedback.innerText = "Mật mã sai rồi. Đọc kĩ từng dữ kiện nhé! 🕵️‍♂️"; speakText("Mật mã chưa đúng rồi, cậu đọc lại từng dữ kiện thật cẩn thận nhé."); }
+                else if (currentStageErrors === 2) { feedback.innerText = "Gợi ý: Tìm Phần nguyên trước, ghi phẩy, rồi đến Phần thập phân. 🧩"; speakText("Gợi ý này: Cậu cứ bình tĩnh tìm phần nguyên trước, ghi dấu phẩy, rồi mới ghép phần thập phân vào sau."); logError('boss', 'logic_error', 'Sai logic bài boss'); }
+                else {
+                    isStageCompleted = true; feedback.innerHTML = `Thử thách này hơi khó. Đáp án là <span class="text-purple-700 font-black">${correctAnswer}</span>. 🤖`; speakText(`Thử thách này hơi khó một chút. Đáp án đúng phải là ${correctAnswer}. Cậu đừng buồn nhé, lần sau mình sẽ làm được!`);
+                    input.value = correctAnswer; sessionData.stageScores[currentScreenIndex] = 0; sessionData.stageCorrect[currentScreenIndex] = 0;
+                    sessionData.score = Object.values(sessionData.stageScores).reduce((a, b) => a + b, 0); sessionData.correctAnswers = Object.values(sessionData.stageCorrect).reduce((a, b) => a + b, 0);
+                    setTimeout(() => nextScreen(), 4500);
+                }
+            }
+            saveTeacherData();
+        }
+
+        function renderSummary(container) {
+            const totalPlayableQs = SCREENS.filter(s => ['build', 'listen', 'read', 'boss'].includes(s.type)).length;
+            const accuracy = Math.round((sessionData.correctAnswers / totalPlayableQs) * 100);
+            
+            let hints = ""; const errorTypes = sessionData.errorsLogged.map(e => e.errorType);
+            if (errorTypes.includes('missing_comma') || errorTypes.includes('wrong_position_tier2')) hints += "<li>Chú ý vị trí dấu phẩy phân cách.</li>";
+            if (errorTypes.includes('missing_zero')) hints += "<li>Cẩn thận với các chữ số 0 ở phần thập phân (VD: không trăm linh bốn -> ,004).</li>";
+            if (errorTypes.includes('skipped')) hints += "<li>Đừng ngần ngại làm thử nếu sai, bỏ qua sẽ bị trừ điểm nhé!</li>";
+            
+            if (hints === "") {
+                if (accuracy === 100) hints = "<li>Tuyệt vời! Cậu nắm bài rất chắc. Hãy duy trì phong độ này nhé!</li>";
+                else hints = "<li>Cậu làm khá tốt, ôn tập kĩ hơn chút là 10 điểm ngay!</li>";
+            }
+
+            container.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 sm:pt-20 bg-green-50 overflow-y-auto w-full">
+                    <h1 class="text-xl sm:text-4xl font-black text-green-600 mb-1 sm:mb-2 text-center">BÁO CÁO NHIỆM VỤ</h1>
+                    <p class="text-xs sm:text-base text-gray-600 font-bold mb-4 sm:mb-8">Trạm 1: Xây nhà chữ số</p>
+
+                    <div class="bg-white p-4 sm:p-8 rounded-3xl shadow-xl w-full max-w-2xl border-4 border-green-200 relative shrink-0">
+                        ${sessionData.badges.length > 0 ? `
+                        <div class="absolute -top-8 -right-2 sm:-top-12 sm:-right-8 transform rotate-12">
+                            <div class="bg-yellow-400 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex flex-col items-center justify-center shadow-lg border-4 border-white">
+                                <i class="fa-solid fa-medal text-2xl sm:text-4xl text-white"></i>
+                                <span class="text-[6px] sm:text-[10px] font-black text-white text-center leading-tight mt-1">KIẾN TRÚC SƯ</span>
+                            </div>
+                        </div>` : ''}
+
+                        <div class="grid grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-8 text-center mt-2 sm:mt-0">
+                            <div class="bg-blue-50 p-2 sm:p-4 rounded-2xl">
+                                <p class="text-[10px] sm:text-sm text-gray-500 font-bold mb-1">Điểm số</p>
+                                <p class="text-2xl sm:text-4xl font-black text-blue-600">${sessionData.score}</p>
+                            </div>
+                            <div class="bg-orange-50 p-2 sm:p-4 rounded-2xl">
+                                <p class="text-[10px] sm:text-sm text-gray-500 font-bold mb-1">Độ chính xác</p>
+                                <p class="text-2xl sm:text-4xl font-black text-orange-600">${accuracy}%</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 sm:mb-6">
+                            <h3 class="font-bold text-gray-800 text-sm sm:text-lg mb-2 border-b-2 border-green-200 pb-1"><i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i> Gợi ý ôn tập:</h3>
+                            <ul class="list-disc pl-4 sm:pl-6 text-xs sm:text-base text-gray-700 space-y-1 sm:space-y-2 font-medium">
+                                ${hints}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <button class="mt-6 sm:mt-8 btn-primary bg-green-500 hover:bg-green-600 shadow-[0_4px_0_#16a34a] active:shadow-[0_0px_0_#16a34a] shrink-0" onclick="location.reload()">Chơi lại từ đầu <i class="fa-solid fa-rotate-right ml-2"></i></button>
+                </div>
+            `;
+            setTimeout(() => speakText(`Chúc mừng cậu đã hoàn thành Trạm 1. Cậu đạt được ${sessionData.score} điểm.`), 500);
+        }
+
+        // --- TEACHER MODE & UTILS ---
+        function logError(stage, type, detail) { sessionData.errorsLogged.push({ stage, errorType: type, detail, time: new Date().toISOString() }); }
+        function saveTeacherData() { localStorage.setItem(APP_ID + '_currentSession', JSON.stringify(sessionData)); }
+        function loadTeacherData() { if(!localStorage.getItem(APP_ID + '_history')) localStorage.setItem(APP_ID + '_history', JSON.stringify([])); }
+
+        function handleTeacherTrigger() {
+            clickCountForTeacher++;
+            if(teacherTimer) clearTimeout(teacherTimer);
+            teacherTimer = setTimeout(() => { clickCountForTeacher = 0; }, 2000);
+            if(clickCountForTeacher >= 5) { clickCountForTeacher = 0; openTeacherMode(); }
+        }
+
+        function openTeacherMode() {
+            const modal = document.getElementById('teacher-modal'); modal.classList.remove('hidden');
+            let history = JSON.parse(localStorage.getItem(APP_ID + '_history') || '[]');
+            const current = JSON.parse(localStorage.getItem(APP_ID + '_currentSession') || JSON.stringify(sessionData));
+            const allSessions = [...history, current].filter(s => s.score > 0 || s.errorsLogged.length > 0);
+            document.getElementById('tm-sessions').innerText = allSessions.length;
+            
+            let totalScore = 0; let totalErrors = 0; let allErrors = [];
+            allSessions.forEach(s => { totalScore += s.score; totalErrors += s.errorsLogged.length; allErrors = allErrors.concat(s.errorsLogged); });
+            document.getElementById('tm-avg-score').innerText = allSessions.length > 0 ? Math.round(totalScore / allSessions.length) : 0;
+            document.getElementById('tm-total-errors').innerText = totalErrors;
+
+            const errorList = document.getElementById('tm-error-list');
+            if(allErrors.length === 0) errorList.innerHTML = '<li class="text-gray-500 italic text-sm">Chưa có dữ liệu lỗi.</li>';
+            else errorList.innerHTML = allErrors.reverse().slice(0, 10).map(e => `
+                    <li class="bg-red-50 p-2 sm:p-3 rounded border border-red-100 flex flex-col sm:flex-row justify-between">
+                        <div class="mb-1 sm:mb-0"><span class="font-bold text-red-700 text-xs sm:text-base">[${e.stage}]</span> <span class="text-gray-700 text-xs sm:text-base">${e.detail}</span></div>
+                        <span class="text-[10px] sm:text-xs text-gray-500 sm:self-center">${new Date(e.time).toLocaleTimeString()}</span>
+                    </li>
+                `).join('');
+        }
+
+        function closeTeacherMode() { document.getElementById('teacher-modal').classList.add('hidden'); }
+        function switchTeacherTab(tabId) {
+            ['stats', 'errors', 'objectives'].forEach(id => document.getElementById('tab-' + id).classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+        }
+
+        function exportData(format) {
+            let history = JSON.parse(localStorage.getItem(APP_ID + '_history') || '[]');
+            const current = JSON.parse(localStorage.getItem(APP_ID + '_currentSession') || JSON.stringify(sessionData));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ app: "Trạm 1", timestamp: new Date(), data: [...history, current] }, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr); downloadAnchorNode.setAttribute("download", "robo_phay_tram1_data.json");
+            document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
+        }
+
+        function resetData() {
+            if(confirm("Bạn có chắc chắn muốn xóa toàn bộ dữ liệu học tập trên máy này?")) {
+                localStorage.removeItem(APP_ID + '_history'); localStorage.removeItem(APP_ID + '_currentSession');
+                alert("Đã xóa dữ liệu."); closeTeacherMode(); location.reload();
+            }
+        }
+
+        // --- AUTH API LOGIC ---
+        function unlockAPI() {
+            const inputPass = document.getElementById('api-password').value.trim();
+            if (!inputPass) return;
+            try {
+                if (inputPass === atob(ENCRYPTED_PAYLOAD).split('|')[0]) {
+                    gcpApiKey = atob(ENCRYPTED_PAYLOAD).split('|')[1];
+                    document.getElementById('auth-modal').classList.add('hidden'); initApp();
+                } else {
+                    document.getElementById('api-password').classList.add('shake-error');
+                    setTimeout(() => document.getElementById('api-password').classList.remove('shake-error'), 500);
+                }
+            } catch (e) {}
+        }
+
+        function skipAuth() { document.getElementById('auth-modal').classList.add('hidden'); initApp(); }
+        document.getElementById('api-password').addEventListener('keypress', function(e) { if (e.key === 'Enter') unlockAPI(); });
+        window.onload = () => {};
+    </script>
+</body>
+</html>
+
+<!-- ===== MOBILE/TABLET ONLY PATCH - DESKTOP GIỮ NGUYÊN =====
+     Code gốc Trạm 1 ở phía trên được giữ nguyên nguyên vẹn.
+     Patch này chỉ tác động khi thiết bị là mobile/tablet hoặc màn hình nhỏ.
+     Trên web/máy tính desktop, giao diện gốc không bị đổi.
+============================================================= -->
+<style id="tram1-mobile-tablet-only-patch">
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  :root{
+    --tram1-vh:100dvh;
+    --tram1-header:58px;
+    --tram1-safe-top:env(safe-area-inset-top,0px);
+    --tram1-safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+
+  html,body{
+    width:100%!important;
+    min-width:0!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+    -webkit-text-size-adjust:100%!important;
+  }
+
+  body{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    touch-action:manipulation!important;
+  }
+
+  body>.absolute.top-0,
+  body>.fixed.top-0{
+    position:fixed!important;
+    top:var(--tram1-safe-top)!important;
+    left:50%!important;
+    transform:translateX(-50%)!important;
+    width:100%!important;
+    max-width:56rem!important;
+    min-height:42px!important;
+    height:auto!important;
+    z-index:1000!important;
+    background:rgba(255,255,255,.94)!important;
+    backdrop-filter:blur(10px)!important;
+    border-bottom:1px solid rgba(148,163,184,.35)!important;
+    padding-left:max(.5rem,env(safe-area-inset-left,0px))!important;
+    padding-right:max(.5rem,env(safe-area-inset-right,0px))!important;
+  }
+
+  #app-container{
+    width:min(100vw,56rem)!important;
+    max-width:56rem!important;
+    height:calc(var(--tram1-vh) - var(--tram1-header) - var(--tram1-safe-bottom))!important;
+    max-height:calc(var(--tram1-vh) - var(--tram1-header) - var(--tram1-safe-bottom))!important;
+    margin-top:var(--tram1-header)!important;
+    padding-top:0!important;
+    min-height:0!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    box-sizing:border-box!important;
+  }
+
+  #app-container *{
+    box-sizing:border-box!important;
+    min-width:0;
+  }
+
+  #app-container>div{
+    min-height:100%!important;
+  }
+
+  #app-container .overflow-y-auto,
+  #app-container .overflow-auto,
+  #tab-stats,
+  #tab-errors,
+  #tab-objectives{
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+  }
+
+  #app-container button,
+  #app-container input,
+  #teacher-modal button,
+  #teacher-modal input,
+  #auth-modal button,
+  #auth-modal input{
+    touch-action:manipulation!important;
+  }
+
+  .digit-card{
+    touch-action:none!important;
+    -webkit-user-select:none!important;
+    user-select:none!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+
+  .drop-zone{
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+
+  #teacher-modal,
+  #auth-modal{
+    height:100dvh!important;
+    max-height:100dvh!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding-top:max(1rem,env(safe-area-inset-top,0px))!important;
+    padding-bottom:max(1rem,env(safe-area-inset-bottom,0px))!important;
+    padding-left:1rem!important;
+    padding-right:1rem!important;
+  }
+
+  #teacher-modal>div,
+  #auth-modal>div{
+    max-height:calc(100dvh - 2rem)!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  #teacher-modal .flex.border-b{
+    overflow-x:auto!important;
+    white-space:nowrap!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+}
+
+@media (max-width: 640px) {
+  :root{--tram1-header:52px}
+
+  body>.absolute.top-0,
+  body>.fixed.top-0{
+    padding-top:.35rem!important;
+    padding-bottom:.35rem!important;
+  }
+
+  body>.absolute.top-0 button,
+  body>.fixed.top-0 button{
+    min-width:36px!important;
+    min-height:36px!important;
+  }
+
+  #app-container{
+    width:100vw!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-bottom:0!important;
+    border-radius:1rem 1rem 0 0!important;
+    box-shadow:none!important;
+  }
+
+  #app-container .speech-bubble{max-width:94vw!important}
+
+  #app-container input[type="text"],
+  #app-container input[type="password"]{
+    font-size:20px!important;
+  }
+
+  #app-container .drop-zone,
+  #app-container .digit-card{
+    min-width:2.5rem!important;
+  }
+
+  #app-container .grid{
+    width:100%!important;
+  }
+}
+
+@media (min-width:641px) and (max-width:1024px) {
+  :root{--tram1-header:70px}
+
+  #app-container{
+    width:min(96vw,56rem)!important;
+    border-radius:1.5rem!important;
+  }
+}
+
+@media (max-height:560px) and (orientation:landscape) {
+  :root{--tram1-header:44px}
+
+  body>.absolute.top-0,
+  body>.fixed.top-0{
+    padding-top:.25rem!important;
+    padding-bottom:.25rem!important;
+  }
+
+  body>.absolute.top-0 button,
+  body>.fixed.top-0 button{
+    width:34px!important;
+    height:34px!important;
+  }
+
+  #app-container{
+    border-radius:.8rem .8rem 0 0!important;
+  }
+}
+</style>
+
+<script id="tram1-mobile-tablet-only-script">
+(function(){
+  "use strict";
+
+  function shouldPatch(){
+    return window.matchMedia("(max-width: 1024px)").matches ||
+           window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+  }
+
+  const root=document.documentElement;
+
+  function vh(){
+    return Math.round((window.visualViewport&&window.visualViewport.height)||window.innerHeight||document.documentElement.clientHeight||0);
+  }
+
+  function header(){
+    return document.querySelector("body>.absolute.top-0,body>.fixed.top-0");
+  }
+
+  function app(){
+    return document.getElementById("app-container");
+  }
+
+  function fit(){
+    if(!shouldPatch()) return;
+
+    const a=app(),h=header(),v=vh();
+    if(v)root.style.setProperty("--tram1-vh",v+"px");
+
+    let hh=52;
+    if(h){
+      const r=h.getBoundingClientRect();
+      hh=Math.max(42,Math.ceil(r.height||hh));
+    }
+
+    const gap=innerWidth<=640?8:14;
+    const off=hh+gap;
+    root.style.setProperty("--tram1-header",off+"px");
+
+    if(a&&v){
+      a.style.marginTop=off+"px";
+      a.style.paddingTop="0";
+      a.style.height="calc("+v+"px - "+off+"px - env(safe-area-inset-bottom,0px))";
+      a.style.maxHeight=a.style.height;
+      a.style.overflowY="auto";
+      a.style.overflowX="hidden";
+      a.style.webkitOverflowScrolling="touch";
+      a.style.touchAction="pan-y";
+    }
+
+    document.querySelectorAll("#app-container .overflow-y-auto,#app-container .overflow-auto,#tab-stats,#tab-errors,#tab-objectives").forEach(el=>{
+      el.style.webkitOverflowScrolling="touch";
+      el.style.overscrollBehavior="contain";
+      el.style.touchAction="pan-y";
+    });
+  }
+
+  function later(){
+    if(!shouldPatch()) return;
+    fit();
+    setTimeout(fit,80);
+    setTimeout(fit,260);
+  }
+
+  function patchRender(){
+    if(!shouldPatch()) return;
+
+    if(typeof window.renderScreen==="function"&&!window.__tram1_resp_render){
+      const old=window.renderScreen;
+      window.renderScreen=function(){
+        const r=old.apply(this,arguments);
+        later();
+        const a=app();
+        if(a)a.scrollTop=0;
+        return r;
+      };
+      window.__tram1_resp_render=true;
+    }
+  }
+
+  function patchFlow(){
+    if(!shouldPatch()) return;
+
+    ["unlockAPI","skipAuth","openTeacherMode","closeTeacherMode","nextScreen","prevScreen","skipQuestion"].forEach(n=>{
+      if(typeof window[n]==="function"&&!window[n].__resp){
+        const old=window[n];
+        const w=function(){
+          const r=old.apply(this,arguments);
+          later();
+          return r;
+        };
+        w.__resp=true;
+        window[n]=w;
+      }
+    });
+  }
+
+  function reinforceDragTouch(){
+    if(!shouldPatch()) return;
+
+    setTimeout(()=>{
+      document.querySelectorAll(".digit-card").forEach(card=>{
+        card.style.touchAction="none";
+        card.style.webkitUserSelect="none";
+        card.style.userSelect="none";
+        card.style.webkitTapHighlightColor="transparent";
+      });
+      document.querySelectorAll(".drop-zone").forEach(zone=>{
+        zone.style.touchAction="manipulation";
+        zone.style.webkitTapHighlightColor="transparent";
+      });
+    },40);
+  }
+
+  function boot(){
+    if(!shouldPatch()) return;
+    patchRender();
+    patchFlow();
+    later();
+    reinforceDragTouch();
+  }
+
+  addEventListener("resize",later,{passive:true});
+  addEventListener("orientationchange",()=>{setTimeout(later,120);setTimeout(later,450)},{passive:true});
+
+  if(window.visualViewport){
+    visualViewport.addEventListener("resize",later,{passive:true});
+    visualViewport.addEventListener("scroll",later,{passive:true});
+  }
+
+  document.addEventListener("DOMContentLoaded",boot);
+  addEventListener("load",boot);
+
+  document.addEventListener("click",()=>{setTimeout(later,30);reinforceDragTouch()},true);
+  document.addEventListener("touchstart",()=>setTimeout(fit,30),{passive:true,capture:true});
+
+  if(window.ResizeObserver){
+    addEventListener("load",()=>{
+      if(!shouldPatch()) return;
+      const ro=new ResizeObserver(later);
+      const a=app(),h=header();
+      if(a)ro.observe(a);
+      if(h)ro.observe(h);
+    });
+  }
+
+  if(window.MutationObserver){
+    addEventListener("load",()=>{
+      if(!shouldPatch()) return;
+      const a=app();
+      if(a)new MutationObserver(()=>{fit();reinforceDragTouch()}).observe(a,{childList:true,subtree:true,attributes:true});
+    });
+  }
+})();
+</script>
+
