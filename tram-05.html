@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trạm 5: Bài 14 Luyện tập chung - Đấu Trường Cuối - Robo Phẩy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+        
+        body { font-family: 'Nunito', sans-serif; background: #1e1b4b; user-select: none; -webkit-user-select: none; overflow-x: hidden; color: #333; touch-action: manipulation; }
+
+        /* Arena Theme Backgrounds */
+        .bg-arena { background: radial-gradient(circle at center, #4c1d95 0%, #1e1b4b 100%); }
+        .bg-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+
+        /* Animations */
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .animate-float { animation: floating 3s ease-in-out infinite; }
+        
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px #fef08a; } 50% { box-shadow: 0 0 30px #eab308; } }
+        .glow-effect { animation: pulse-glow 2s infinite; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
+        .shake-error { animation: shake 0.5s; border-color: #ef4444 !important; background-color: #fef2f2 !important; color: #ef4444 !important;}
+        
+        /* Playful hover animations */
+        .hover-pop { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @media (hover: hover) { .hover-pop:hover { transform: scale(1.03) translateY(-2px); } }
+        .hover-pop:active { transform: scale(0.95) translateY(2px); transition: transform 0.1s; }
+
+        /* UI - Thích ứng Mobile */
+        .btn-primary { @apply bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-black py-2.5 px-4 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl shadow-[0_4px_0_#ca8a04] active:shadow-[0_0px_0_#ca8a04] transition-all text-sm sm:text-lg hover-pop; }
+        .btn-choice { @apply bg-white border-2 sm:border-4 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 py-3 px-4 sm:py-4 sm:px-6 rounded-xl sm:rounded-2xl text-lg sm:text-2xl font-black text-indigo-800 transition-transform shadow-sm w-full hover-pop; }
+        
+        /* Progress Bar */
+        .step-indicator { @apply w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 transition-all duration-500; }
+        .step-active { @apply bg-yellow-400 border-yellow-200 text-yellow-900 shadow-[0_0_10px_#fef08a]; transform: scale(1.2); }
+        .step-done { @apply bg-green-500 border-green-300 text-white; }
+        .step-wait { @apply bg-indigo-900 border-indigo-700 text-indigo-300; }
+        .step-line { @apply h-1 flex-1 bg-indigo-900 transition-colors duration-500; }
+        .line-done { @apply bg-green-500; }
+
+        /* Drag Drop for Sort */
+        .drag-card { cursor: pointer; transition: transform 0.1s; z-index: 10; touch-action: manipulation;}
+        @media (min-width: 640px) { .drag-card { cursor: grab; } .drag-card:active { cursor: grabbing; transform: scale(1.05) rotate(2deg); } }
+        
+        .drop-zone { transition: all 0.3s; }
+        .drop-zone.drag-over { background-color: #fef08a; border-color: #eab308; transform: scale(1.05); }
+
+        .speech-bubble { position: relative; background: white; border-radius: 1em; }
+        .speech-bubble:after { content: ''; position: absolute; bottom: 0; left: 20%; width: 0; height: 0; border: 15px solid transparent; border-top-color: white; border-bottom: 0; border-left: 0; margin-left: -7px; margin-bottom: -15px; }
+        @media (min-width: 640px) { .speech-bubble:after { border-width: 20px; margin-left: -10px; margin-bottom: -20px; } }
+        
+        /* Ẩn thanh cuộn ở Modal Giáo viên */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col items-center justify-center relative bg-arena">
+
+    <!-- Header -->
+    <div class="fixed top-0 w-full max-w-4xl p-2 sm:p-4 flex justify-between items-center z-50">
+        <div class="flex items-center gap-1.5 sm:gap-2 cursor-pointer hover-pop" onclick="handleTeacherTrigger()">
+            <div class="bg-yellow-400 p-1.5 sm:p-2 rounded-full shadow-[0_0_10px_#fef08a]">
+                <i class="fa-solid fa-trophy text-yellow-900 text-sm sm:text-xl"></i>
+            </div>
+            <span class="font-extrabold text-yellow-400 tracking-wider text-sm sm:text-lg drop-shadow-md truncate max-w-[150px] sm:max-w-none">TRẠM 5 · BÀI 14: LUYỆN TẬP CHUNG</span>
+        </div>
+        <div class="flex gap-1.5 sm:gap-3">
+            <button class="bg-indigo-900/80 border border-indigo-700 w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shadow-md text-indigo-200 hover:text-white hover:bg-indigo-800 transition-all hover-pop" onclick="goHome()" title="Trang chủ">
+                <i class="fa-solid fa-house text-xs sm:text-xl"></i>
+            </button>
+            <button class="bg-indigo-900/80 border border-indigo-700 w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shadow-md text-indigo-200 hover:text-yellow-400 hover:bg-indigo-800 transition-all hover-pop" onclick="toggleGlobalAudio()">
+                <i id="audio-icon" class="fa-solid fa-volume-high text-xs sm:text-xl"></i>
+            </button>
+            <button class="bg-indigo-900/80 border border-indigo-700 w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shadow-md text-indigo-200 hover:text-green-400 hover:bg-indigo-800 transition-all hover-pop" onclick="playCurrentHint()">
+                <i class="fa-solid fa-circle-info text-xs sm:text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app-container" class="w-full max-w-4xl h-[88vh] sm:h-[85vh] mt-12 sm:mt-16 bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-y-auto overflow-x-hidden relative flex flex-col border-t-4 sm:border-4 border-indigo-300">
+        <!-- JS Injects Here -->
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[300] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Teacher Modal -->
+    <div id="teacher-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center">
+        <div class="bg-white w-11/12 max-w-3xl h-[85vh] sm:h-[80vh] rounded-2xl p-4 sm:p-6 flex flex-col">
+            <div class="flex justify-between items-center mb-3 sm:mb-4">
+                <h2 class="text-lg sm:text-2xl font-bold text-gray-800 truncate"><i class="fa-solid fa-chalkboard-user mr-2 text-indigo-600"></i>Chế độ Giáo Viên</h2>
+                <button onclick="closeTeacherMode()" class="text-gray-500 hover:text-red-500 text-xl sm:text-2xl hover-pop px-2"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <div class="flex border-b mb-4 gap-1 sm:gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar pb-1">
+                <button class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base font-bold text-indigo-600 border-b-2 border-indigo-600 shrink-0 transition-colors" id="btn-tab-stats" onclick="switchTeacherTab('stats')">Kỹ năng</button>
+                <button class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base font-bold text-gray-500 hover:text-indigo-600 shrink-0 transition-colors" id="btn-tab-errors" onclick="switchTeacherTab('errors')">Lỗi thường gặp</button>
+                <button class="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base font-bold text-gray-500 hover:text-indigo-600 shrink-0 transition-colors" id="btn-tab-objectives" onclick="switchTeacherTab('objectives')">Mục tiêu</button>
+            </div>
+
+            <div id="tab-stats" class="flex-1 overflow-y-auto">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                    <div class="bg-blue-50 p-2 sm:p-3 rounded-xl border border-blue-200 text-center"><p class="text-[10px] sm:text-xs font-bold text-blue-600">Cấu tạo số</p><p class="text-xl sm:text-2xl font-black text-blue-800" id="tm-skill-read">0%</p></div>
+                    <div class="bg-green-50 p-2 sm:p-3 rounded-xl border border-green-200 text-center"><p class="text-[10px] sm:text-xs font-bold text-green-600">So sánh</p><p class="text-xl sm:text-2xl font-black text-green-800" id="tm-skill-compare">0%</p></div>
+                    <div class="bg-orange-50 p-2 sm:p-3 rounded-xl border border-orange-200 text-center"><p class="text-[10px] sm:text-xs font-bold text-orange-600">Đo lường</p><p class="text-xl sm:text-2xl font-black text-orange-800" id="tm-skill-measure">0%</p></div>
+                    <div class="bg-purple-50 p-2 sm:p-3 rounded-xl border border-purple-200 text-center"><p class="text-[10px] sm:text-xs font-bold text-purple-600">Làm tròn</p><p class="text-xl sm:text-2xl font-black text-purple-800" id="tm-skill-round">0%</p></div>
+                </div>
+                <div class="flex justify-between items-center bg-gray-100 p-3 sm:p-4 rounded-xl mb-4 sm:mb-6">
+                    <div><p class="text-xs sm:text-sm font-bold text-gray-600">Tổng điểm:</p><p class="text-2xl sm:text-3xl font-black text-indigo-700" id="tm-avg">0</p></div>
+                    <div class="text-right"><p class="text-xs sm:text-sm font-bold text-gray-600">Thời gian:</p><p class="text-2xl sm:text-3xl font-black text-indigo-700" id="tm-time">0p</p></div>
+                </div>
+                <div class="flex gap-2 sm:gap-4 flex-wrap">
+                    <button class="bg-blue-500 text-white font-bold py-2 px-3 sm:px-4 text-sm sm:text-base rounded-lg hover-pop flex-1 sm:flex-none" onclick="exportData('json')">Tải JSON</button>
+                    <button class="bg-green-500 text-white font-bold py-2 px-3 sm:px-4 text-sm sm:text-base rounded-lg hover-pop flex-1 sm:flex-none" onclick="exportData('csv')">Tải Lỗi (CSV)</button>
+                    <button id="btn-reset-data" class="bg-red-500 text-white font-bold py-2 px-3 sm:px-4 text-sm sm:text-base rounded-lg mt-2 sm:mt-0 sm:ml-auto hover-pop w-full sm:w-auto" onclick="resetData()">Xóa Dữ Liệu</button>
+                </div>
+            </div>
+
+            <div id="tab-errors" class="flex-1 overflow-y-auto hidden pr-2">
+                <ul class="space-y-2 sm:space-y-3" id="tm-error-list"></ul>
+            </div>
+             <div id="tab-objectives" class="flex-1 overflow-y-auto hidden pr-2">
+                <h3 class="font-bold text-sm sm:text-base mb-2 text-indigo-800">Mục tiêu Trạm 5 (Bài 14 - Luyện tập chung):</h3>
+                <ul class="list-disc pl-5 text-sm sm:text-base text-gray-700 space-y-1.5 marker:text-indigo-400">
+                    <li>Kiểm tra tổng hợp: Đọc, viết, cấu tạo số thập phân.</li>
+                    <li>Kiểm tra kỹ năng so sánh, sắp xếp dãy số và nhận diện số bằng nhau.</li>
+                    <li>Kiểm tra kỹ năng chuyển đổi đơn vị đo lường thực tế.</li>
+                    <li><b>Đặc biệt:</b> Thực hành và nắm vững quy tắc <b>làm tròn số thập phân</b> (đến số tự nhiên, phần mười).</li>
+                    <li>Phát triển tư duy qua bài toán kết hợp nhiều bước ở vòng Boss.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-90 z-[200] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center shadow-2xl border-4 border-indigo-400 transform transition-all">
+            <div class="text-5xl sm:text-6xl mb-4 glow-effect rounded-full animate-float">🤖</div>
+            <h2 class="text-xl sm:text-2xl font-black text-indigo-800 mb-4 sm:mb-6">Mật mã Đấu Trường</h2>
+            <input type="password" id="api-password" class="w-full border-2 sm:border-4 border-indigo-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center text-xl sm:text-2xl font-bold mb-4 sm:mb-6 focus:outline-none focus:border-indigo-500 shadow-inner" placeholder="Nhập mật mã...">
+            <div class="flex gap-3 sm:gap-4 w-full">
+                <button class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 sm:py-3.5 rounded-xl sm:rounded-2xl hover-pop text-sm sm:text-base" onclick="skipAuth()">Bỏ qua</button>
+                <button class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 sm:py-3.5 rounded-xl sm:rounded-2xl hover-pop shadow-md text-sm sm:text-base" onclick="unlockAPI()">Kích hoạt</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & STATE ---
+        let gcpApiKey = null;
+        let gcpApiFailed = false; 
+        const ENCRYPTED_PAYLOAD = "YWRtaW58QUl6YVN5Q0hrZElrYy10WklZUGx5emdQTFZ3bXZSSk91T2toeWVF";
+        const APP_ID = 'robo_phay_tram5_final';
+        let isAudioEnabled = true;
+        let currentScreenIndex = 0;
+        let currentStageErrors = 0;
+        let clickCountForTeacher = 0, teacherTimer = null;
+        let currentHintText = "";
+        let sessionStartTime = null;
+        let currentAudio = null;
+        let currentSpeechId = 0; 
+
+        let sessionData = { 
+            score: 0, timeSpent: 0, 
+            skills: { readWrite: {c:0, t:0}, compare: {c:0, t:0}, measure: {c:0, t:0}, round: {c:0, t:0}, boss: {c:0, t:0} },
+            errorsLogged: [], badges: [] 
+        };
+
+        const SCREENS = [
+            { id: 'intro', type: 'intro', step: 0 },
+            // V1: Cấu tạo số
+            { id: 'v1_1', type: 'mcq', skill: 'readWrite', step: 1, title: "Vòng 1: Cổng Chữ Số", data: { 
+                q: "Số gồm 3 chục, 5 đơn vị, 2 phần mười và 4 phần nghìn viết là:", 
+                opts: ["35,24", "35,204", "35,024"], ans: 1, trapIdx: 0, 
+                hint: "Cậu để ý nhé: Hàng phần trăm không được nhắc đến, tức là nó 'vắng mặt' và bằng 0. Dấu phẩy nằm ngay sau lưng hàng đơn vị kìa!" 
+            }},
+            { id: 'v1_2', type: 'mcq', skill: 'readWrite', step: 1, title: "Vòng 1: Cổng Chữ Số", data: { 
+                q: "Số thập phân 'Một trăm hai mươi lăm phẩy không tám' viết là:", 
+                opts: ["125,8", "125,08", "10025,08"], ans: 1, trapIdx: 0, 
+                hint: "Khoan chốt vội nha! Phần thập phân 'không tám' nghĩa là có chữ số 0 đứng canh ở hàng phần mười, còn số 8 lùi lại hàng phần trăm đấy." 
+            }},
+            { id: 'v1_3', type: 'mcq', skill: 'readWrite', step: 1, title: "Vòng 1: Cổng Chữ Số", data: { 
+                q: "Trong số thập phân 86,324, chữ số 2 thuộc hàng nào?", 
+                opts: ["Hàng phần mười", "Hàng phần trăm", "Hàng phần nghìn"], ans: 1, trapIdx: 0, 
+                hint: "Mẹo nhỏ nè: Đếm từ dấu phẩy sang phải nhé. Cạnh phẩy là phần mười, đứng thứ hai là phần trăm, xếp thứ ba là phần nghìn!" 
+            }},
+            // V2: So sánh
+            { id: 'v2_1', type: 'sort', skill: 'compare', step: 2, title: "Vòng 2: Cầu So Sánh", data: { 
+                nums: ["3,604", "2,875", "2,857", "3,106"], correct: ["2,857", "2,875", "3,106", "3,604"], type: "TỪ BÉ ĐẾN LỚN",
+                hint: "Đừng vội nhìn hoa mắt nha! Hãy gom nhóm phần nguyên 2 lại so sánh với nhau trước. Xong rồi mới tới nhóm phần nguyên 3."
+            }},
+            { id: 'v2_2', type: 'mcq', skill: 'compare', step: 2, title: "Vòng 2: Phép Thuật Số 0", data: { 
+                q: "Số thập phân nào dưới đây có giá trị BẰNG với 0,7 ?", 
+                opts: ["0,07", "7,0", "0,700"], ans: 2, trapIdx: 0, 
+                hint: "Thần chú số thập phân: 'Thêm hay bớt bao nhiêu số 0 ở tít tận cùng bên phải phần thập phân thì giá trị cũng chẳng hề thay đổi'." 
+            }},
+            { id: 'v2_3', type: 'mcq', skill: 'compare', step: 2, title: "Vòng 2: Cầu So Sánh", data: { 
+                q: "Số thập phân LỚN NHẤT trong các số 4,52 ; 4,25 ; 4,502 ; 4,052 là:", 
+                opts: ["4,52", "4,502", "4,052"], ans: 0, trapIdx: 1, 
+                hint: "Bí kíp so sánh: So phần mười trước (5=5). Rẽ sang so tiếp phần trăm (2 lớn hơn 0). Vậy là phân định thắng thua rồi nhé!" 
+            }},
+            // V3: Đo lường
+            { id: 'v3_1', type: 'input', skill: 'measure', step: 3, title: "Vòng 3: Xưởng Đo Lường", data: { 
+                q: "1 kg 250 g = ... kg", unit: "kg", ans: "1,25", ansAlt: "1,250", 
+                hint: "Dễ ợt nè: 1kg giữ nguyên ở phần nguyên. 250g bé xíu kia chính là 250 phần nghìn kg, viết ngay sau dấu phẩy là đẹp!" 
+            }},
+            { id: 'v3_2', type: 'input', skill: 'measure', step: 3, title: "Vòng 3: Xưởng Đo Lường", data: { 
+                q: "3 m 5 cm = ... m", unit: "m", ans: "3,05", ansAlt: "3,05", 
+                hint: "Khúc này hay bẫy lắm nha! 3m ở phần nguyên. Còn 5cm = 5 phần trăm mét (tức là cột cm có số 5, còn cột dm trống rỗng phải điền số 0)." 
+            }},
+            { id: 'v3_3', type: 'input', skill: 'measure', step: 3, title: "Vòng 3: Xưởng Đo Lường", data: { 
+                q: "5 tấn 42 kg = ... tấn", unit: "tấn", ans: "5,042", ansAlt: "5,042", 
+                hint: "Thử nhớ lại xem 1 tấn bằng bao nhiêu kg nào? 1000kg đúng không? Vậy 42kg là 42 phần nghìn tấn, nghĩa là hàng tạ (phần mười) bị thiếu số 0 đó!" 
+            }},
+            // V4: Làm tròn
+            { id: 'v4_1', type: 'mcq', skill: 'round', step: 4, title: "Vòng 4: Vườn Làm Tròn", data: { 
+                q: "Làm tròn số 4,72 đến số tự nhiên gần nhất:", 
+                opts: ["4", "5", "4,7"], ans: 1, trapIdx: 0, 
+                hint: "Luật làm tròn nè: Nhìn vào hàng phần mười là số 7. Vì 7 từ 5 trở lên, nên ta 'tặng' ngay 1 đơn vị cho phần nguyên: 4 + 1 = 5." 
+            }},
+            { id: 'v4_2', type: 'mcq', skill: 'round', step: 4, title: "Vòng 4: Vườn Làm Tròn", data: { 
+                q: "Làm tròn số 135,74 đến hàng phần mười:", 
+                opts: ["135,7", "135,8", "136"], ans: 0, trapIdx: 1, 
+                hint: "Làm tròn đến phần mười thì ngó sang ông hàng xóm phần trăm (số 4). Vì 4 nhỏ hơn 5 nên ông phần mười (7) không được tăng lên đâu nha." 
+            }},
+            { id: 'v4_3', type: 'mcq', skill: 'round', step: 4, title: "Vòng 4: Vườn Làm Tròn", data: { 
+                q: "Làm tròn số 8,96 đến hàng phần mười ta được:", 
+                opts: ["8,9", "9,0", "8,90"], ans: 1, trapIdx: 0, 
+                hint: "Ca này khó đây! Nhìn hàng phần trăm là 6 (lớn hơn 5). Cộng 1 vào hàng phần mười: 9 + 1 = 10. Thế là phải 'nhớ' 1 sang phần nguyên, biến thành 9,0." 
+            }},
+            // Boss
+            { id: 'boss', type: 'boss', skill: 'boss', step: 5, title: "Trùm Cuối: Hộp Quà Bí Ẩn", data: { 
+                context: "Chiếc hộp chứa Huy hiệu Quán Quân có khối lượng chuẩn để mở khóa là từ 3,4 kg đến 3,8 kg. Cân điện tử hiện chính xác hộp của cậu là:",
+                weight: "3kg 540g"
+            }},
+            { id: 'summary', type: 'summary', step: 6 }
+        ];
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(msg, type='info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-500' : (type === 'success' ? 'bg-green-500' : 'bg-indigo-600');
+            const iconClass = type === 'error' ? 'fa-triangle-exclamation' : (type === 'success' ? 'fa-check-circle' : 'fa-circle-info');
+            
+            toast.className = `${bgClass} text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl shadow-lg font-bold flex items-center gap-2 sm:gap-3 transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto max-w-[90vw] sm:max-w-sm text-xs sm:text-sm`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-lg sm:text-2xl shrink-0"></i> <span class="leading-snug">${msg}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => { toast.classList.remove('translate-y-10', 'opacity-0'); }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 6000);
+        }
+
+        // --- AUDIO ENGINE ---
+        async function speakText(text) {
+            currentHintText = text;
+            if (!isAudioEnabled) return;
+
+            const mySpeechId = ++currentSpeechId;
+
+            const unitMap = { 'km': 'ki lô mét', 'hm': 'héc tô mét', 'dam': 'đề ca mét', 'm': 'mét', 'dm': 'đề xi mét', 'cm': 'xăng ti mét', 'mm': 'mi li mét', 'kg': 'ki lô gam', 'hg': 'héc tô gam', 'dag': 'đề ca gam', 'g': 'gam' };
+            const units = Object.keys(unitMap).sort((a,b) => b.length - a.length);
+            const unitRegex = new RegExp(`(^|[\\s\\d])(${units.join('|')})(?=[^\\p{L}]|$)`, 'giu');
+
+            let pText = text
+                .replace(/(\d),(\d)/g, '$1 phẩy $2')
+                .replace(/>/g, ' lớn hơn ')
+                .replace(/</g, ' bé hơn ')
+                .replace(/=/g, ' bằng ');
+
+            pText = pText.replace(unitRegex, (match, p1, p2) => p1 + ' ' + unitMap[p2.toLowerCase()] + ' ');
+
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+            
+            if (gcpApiKey && !gcpApiFailed) {
+                try {
+                    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${gcpApiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ input: { text: pText }, voice: { languageCode: 'vi-VN', name: 'vi-VN-Neural2-A' }, audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95, pitch: 3.0 } })
+                    });
+
+                    if (mySpeechId !== currentSpeechId) return;
+
+                    if (res.ok) { 
+                        const d = await res.json(); 
+                        if (mySpeechId !== currentSpeechId) return; 
+
+                        if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+                        currentAudio = new Audio("data:audio/mp3;base64," + d.audioContent); 
+                        const playPromise = currentAudio.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => { });
+                        }
+                        return; 
+                    } else {
+                        gcpApiFailed = true; 
+                        const errData = await res.json();
+                        if (errData.error && errData.error.status === "PERMISSION_DENIED") {
+                            showToast("API Key của bạn chưa bật quyền đọc TTS. Đã tự động chuyển sang giọng robot!", "error");
+                        } else {
+                            showToast("Lỗi kết nối Google TTS. Đã tự động chuyển sang giọng robot!", "error");
+                        }
+                    }
+                } catch (e) { 
+                    gcpApiFailed = true;
+                }
+            }
+
+            if (mySpeechId !== currentSpeechId) return;
+
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance(pText); 
+                msg.lang = 'vi-VN'; 
+                msg.rate = 0.9; 
+                msg.pitch = 1.1;
+                
+                const voices = window.speechSynthesis.getVoices();
+                const viVoice = voices.find(v => v.lang === 'vi-VN' && v.name.includes('Google')) || voices.find(v => v.lang === 'vi-VN' || v.lang === 'vi');
+                if(viVoice) {
+                    msg.voice = viVoice;
+                }
+
+                window.speechSynthesis.speak(msg);
+            }
+        }
+        
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        }
+
+        function toggleGlobalAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            document.getElementById('audio-icon').className = isAudioEnabled ? 'fa-solid fa-volume-high text-xs sm:text-xl' : 'fa-solid fa-volume-xmark text-xs sm:text-xl text-red-400';
+            if(!isAudioEnabled) {
+                window.speechSynthesis.cancel();
+                if(currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0;}
+            } else speakText("Đã bật âm thanh rộn ràng!");
+        }
+        function playCurrentHint() { if(currentHintText) speakText(currentHintText); }
+        function playSFX(type) {
+            if (!isAudioEnabled) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            if (type === 'correct') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(); osc.stop(ctx.currentTime + 0.5);
+            } else if(type === 'pop') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+            } else {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            }
+        }
+
+        // --- FLOW ---
+        function initApp() { sessionStartTime = new Date(); loadTeacherData(); renderScreen(); }
+        function nextScreen() { currentStageErrors = 0; if (currentScreenIndex < SCREENS.length - 1) { currentScreenIndex++; renderScreen(); } }
+        function prevScreen() { if (currentScreenIndex > 0) { currentScreenIndex--; currentStageErrors = 0; renderScreen(); } }
+        function showNextBtn(hideId) { 
+            if(hideId) { const e = document.getElementById(hideId); if(e) e.classList.add('hidden'); } 
+            const skipBtn = document.getElementById('btn-skip'); if(skipBtn) skipBtn.classList.add('hidden');
+            document.getElementById('btn-next').classList.remove('hidden'); 
+        }
+        function skipScreen() { playSFX('correct'); nextScreen(); }
+        function goHome() {
+            currentScreenIndex = 0;
+            currentStageErrors = 0;
+            sessionData = { 
+                score: 0, timeSpent: 0, 
+                skills: { readWrite: {c:0, t:0}, compare: {c:0, t:0}, measure: {c:0, t:0}, round: {c:0, t:0}, boss: {c:0, t:0} },
+                errorsLogged: [], badges: [] 
+            };
+            renderScreen();
+        }
+        
+        function updateSkill(skill, isCorrect) {
+            if(!sessionData.skills[skill]) return;
+            sessionData.skills[skill].t++;
+            if(isCorrect) sessionData.skills[skill].c++;
+        }
+
+        // Generate Progress Bar HTML
+        function getProgressBar(currentStep) {
+            if (currentStep === 0 || currentStep === 6) return ''; 
+            const steps = [1, 2, 3, 4, 5];
+            const html = steps.map((s, i) => {
+                let cls = 'step-wait';
+                if (s < currentStep) cls = 'step-done';
+                else if (s === currentStep) cls = 'step-active';
+                
+                let line = '';
+                if (i < steps.length - 1) {
+                    const lCls = s < currentStep ? 'line-done' : '';
+                    line = `<div class="step-line ${lCls}"></div>`;
+                }
+                
+                const icon = s === 5 ? '<i class="fa-solid fa-dragon"></i>' : (s < currentStep ? '<i class="fa-solid fa-check"></i>' : s);
+                return `<div class="step-indicator ${cls}">${icon}</div>${line}`;
+            }).join('');
+            
+            return `<div class="w-full px-4 py-3 sm:px-8 sm:py-4 bg-indigo-50/50 border-b border-indigo-100 flex items-center justify-between shadow-sm sticky top-0 z-20 backdrop-blur-md bg-opacity-90">${html}</div>`;
+        }
+
+        function renderScreen() {
+            const container = document.getElementById('app-container');
+            const data = SCREENS[currentScreenIndex];
+            
+            let contentHTML = '';
+            if(data.type === 'intro') contentHTML = renderIntro(data);
+            else if(data.type === 'mcq') contentHTML = renderMCQ(data);
+            else if(data.type === 'sort') contentHTML = renderSort(data);
+            else if(data.type === 'input') contentHTML = renderInput(data);
+            else if(data.type === 'boss') contentHTML = renderBoss(data);
+            else if(data.type === 'summary') contentHTML = renderSummary(data);
+
+            container.innerHTML = getProgressBar(data.step) + contentHTML;
+            
+            // Scroll to top automatically when changing screens
+            container.scrollTop = 0;
+
+            // Post-render JS
+            if(data.type === 'sort') initSortDragDrop();
+            if(data.type === 'input' || data.type === 'boss') attachInputFilters();
+            
+            // Auto audio
+            if(data.type === 'intro') setTimeout(()=>speakText("Chào cậu! Tớ là Robo Phẩy siêu cấp vũ trụ đây. Cậu đã sẵn sàng bước vào Trạm tổng ôn cuối cùng chưa? Năng lượng lên nào!"), 500);
+            else if(data.title && data.data && data.data.q) setTimeout(()=>speakText(`${data.title}. ${data.data.q}`), 500);
+            else if(data.type === 'boss') setTimeout(()=>speakText("Màn Boss cuối cùng! Trùm cuối xuất hiện. Cậu hãy đọc thật kỹ lời giải đố của chiếc hộp bí ẩn nhé!"), 500);
+        }
+
+        // --- SCREENS RENDERERS ---
+        function renderIntro(d) {
+            return `
+                <div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative min-h-[70vh]">
+                    <i class="fa-solid fa-ranking-star text-yellow-300/10 text-7xl sm:text-9xl absolute top-5 left-5 sm:top-10 sm:left-10"></i>
+                    <i class="fa-solid fa-rocket text-indigo-300/20 text-5xl sm:text-6xl absolute bottom-10 right-5 sm:bottom-20 sm:right-10 animate-pulse"></i>
+                    <div class="w-full flex justify-center mb-3 sm:mb-4 relative h-24 sm:h-32">
+                        <div class="z-10 text-6xl sm:text-7xl animate-float mt-2 sm:mt-4 glow-effect rounded-full bg-white p-3 sm:p-4 border-2 sm:border-4 border-indigo-200">🤖</div>
+                    </div>
+                    <div class="speech-bubble p-4 sm:p-6 mb-6 sm:mb-8 text-center max-w-[90%] sm:max-w-xl shadow-xl border-2 sm:border-4 border-indigo-400 bg-gradient-to-br from-white to-indigo-50">
+                        <h1 class="text-xl sm:text-3xl font-black text-indigo-800 mb-2 sm:mb-3">Đấu Trường Số Thập Phân</h1>
+                        <p class="text-gray-700 font-bold text-sm sm:text-lg leading-relaxed">Chào cậu! Tớ là Robo Phẩy siêu cấp vũ trụ đây! 🚀<br>Vậy là chúng ta đã đến Trạm 5 - Bài 14 Luyện tập chung. Hãy vận dụng 100% công lực: Đọc, viết, so sánh, đổi đơn vị và <span class="text-purple-600 font-black">Làm tròn số</span> để rinh ngay Huy hiệu nhé!</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 w-[90%] sm:w-auto z-10">
+                        <button class="bg-white hover:bg-indigo-50 text-indigo-800 font-bold py-3 px-4 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-indigo-200 transition-all text-base sm:text-lg flex justify-center items-center gap-2 shadow-sm hover-pop" onclick="speakText('Chào cậu! Tớ là Robo Phẩy siêu cấp vũ trụ đây. Cậu đã sẵn sàng bước vào Trạm tổng ôn cuối cùng chưa? Năng lượng lên nào!');"><i class="fa-solid fa-ear-listen text-lg sm:text-xl text-indigo-500"></i> Lời dẫn</button>
+                        <button class="btn-primary flex justify-center items-center" onclick="nextScreen()">Chinh phục ngay <i class="fa-solid fa-bolt ml-2 text-yellow-100"></i></button>
+                    </div>
+                </div>`;
+        }
+
+        function renderMCQ(d) {
+            const opts = d.data.opts.map((o, i) => `
+                <button class="btn-choice relative overflow-hidden group" onclick="chkMCQ(${i}, ${d.data.ans}, ${d.data.trapIdx}, this, '${d.data.hint.replace(/'/g, "\\'")}', '${d.skill}')">
+                    <span class="relative z-10">${o}</span>
+                    <div class="absolute inset-0 bg-indigo-100 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 z-0"></div>
+                </button>
+            `).join('');
+
+            return `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 min-h-max bg-gradient-to-b from-white to-indigo-50/50">
+                    <h2 class="text-xl sm:text-3xl font-black text-indigo-800 mb-4 sm:mb-6 text-center drop-shadow-sm"><i class="fa-solid fa-star text-yellow-400 mr-2"></i>${d.title}</h2>
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-b-2 sm:border-b-4 border-indigo-200 mb-6 sm:mb-8 max-w-2xl mx-auto w-full text-center relative">
+                        <div class="absolute -top-3 -left-3 sm:-top-4 sm:-left-4 text-3xl sm:text-4xl transform -rotate-12">📝</div>
+                        <p class="text-lg sm:text-2xl font-bold text-gray-800 leading-relaxed px-2">${d.data.q}</p>
+                    </div>
+                    <div class="flex flex-col gap-3 sm:gap-4 max-w-md mx-auto w-full px-2 sm:px-0" id="mcq-opts">${opts}</div>
+                    <div id="mcq-fb" class="mt-4 sm:mt-6 px-2 text-center text-sm sm:text-xl font-bold min-h-[3rem] transition-all"></div>
+                    <div class="mt-auto flex justify-between gap-2 sm:gap-3 w-full pt-6 pb-2 px-2 sm:px-0">
+                        <div class="flex gap-2">
+                            <button class="bg-gray-200 hover:bg-gray-300 p-3 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl font-bold text-gray-700 hover-pop flex items-center justify-center" onclick="prevScreen()"><i class="fa-solid fa-arrow-left text-sm sm:text-base"></i></button>
+                            <button id="btn-skip" class="bg-red-100 hover:bg-red-200 py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl font-bold text-red-600 transition-all hover-pop text-xs sm:text-base flex items-center gap-1" onclick="skipScreen()" title="Bỏ qua màn này"><span class="hidden sm:inline">Bỏ qua</span> <i class="fa-solid fa-forward-step"></i></button>
+                        </div>
+                        <div class="flex gap-2 ml-auto">
+                            <button id="btn-next" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-xl sm:rounded-2xl hidden shadow-[0_4px_0_#16a34a] active:translate-y-1 transition-all hover-pop text-sm sm:text-base items-center gap-1 sm:gap-2" onclick="nextScreen()">Tiếp! <i class="fa-solid fa-rocket"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function chkMCQ(sel, ans, trap, btn, hint, skill) {
+            const fb = document.getElementById('mcq-fb');
+            if(sel === ans) {
+                playSFX('correct'); updateSkill(skill, true);
+                btn.classList.replace('border-indigo-200', 'border-green-500'); btn.classList.replace('text-indigo-800', 'text-green-700'); btn.classList.add('bg-green-50');
+                fb.innerHTML="<span class='text-green-600 animate-pulse'><i class='fa-solid fa-party-horn mr-1 sm:mr-2'></i>Tuyệt cú mèo! Cậu chốt đơn chính xác quá! 🌟</span>";
+                speakText("Tuyệt cú mèo! Cậu xử lý mượt quá!");
+                sessionData.score+=10; document.getElementById('mcq-opts').classList.add('pointer-events-none'); showNextBtn();
+            } else {
+                playSFX('wrong'); updateSkill(skill, false); currentStageErrors++; btn.classList.add('shake-error'); setTimeout(()=>btn.classList.remove('shake-error'),500);
+                
+                if(currentStageErrors === 1 && sel === trap) {
+                    fb.innerHTML = "<span class='text-orange-500'><i class='fa-solid fa-triangle-exclamation mr-1 sm:mr-2'></i>Ái chà, bẫy giăng sẵn mà cậu lỡ đạp trúng rồi! Đọc kỹ xíu nhé.</span>";
+                    speakText("Ái chà, bẫy giăng sẵn mà cậu lỡ đạp trúng rồi! Đọc lại đề thật chậm rãi xem nào.");
+                    logError(skill, 'trap_fallen', 'Mắc bẫy MCQ');
+                } else {
+                    fb.innerHTML = `<span class='text-indigo-600'><i class='fa-solid fa-lightbulb mr-1 sm:mr-2 text-yellow-500'></i>Gợi ý: ${hint}</span>`;
+                    speakText("Gợi ý siêu to khổng lồ từ Robo đây: " + hint);
+                    logError(skill, 'wrong_logic', 'Sai MCQ');
+                }
+            }
+            saveTeacherData();
+        }
+
+        function renderSort(d) {
+            const shuf = [...d.data.nums].sort(()=>Math.random()-0.5);
+            // Smaller cards on mobile
+            const slots = d.data.nums.map(() => `<div class="drop-zone z-s w-[4.5rem] h-12 sm:w-24 sm:h-16 bg-gray-50 border-2 sm:border-4 border-dashed border-indigo-200 rounded-lg sm:rounded-xl flex items-center justify-center font-bold shrink-0 shadow-inner"></div>`).join('');
+            const docks = shuf.map(n => `<div class="drag-card c-s w-[4.5rem] h-12 sm:w-24 sm:h-16 bg-white border-b-2 sm:border-b-4 border-indigo-400 text-indigo-800 rounded-lg sm:rounded-xl shadow-sm sm:shadow-md flex items-center justify-center text-[13px] sm:text-xl font-black shrink-0 hover-pop" draggable="true" data-v="${n}">${n}</div>`).join('');
+            
+            return `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 min-h-max bg-gradient-to-b from-white to-indigo-50/50">
+                    <h2 class="text-xl sm:text-3xl font-black text-indigo-800 mb-2 text-center drop-shadow-sm"><i class="fa-solid fa-bridge-water text-blue-400 mr-2"></i>${d.title}</h2>
+                    <p class="font-bold text-orange-500 text-center mb-4 sm:mb-6 text-xs sm:text-lg animate-pulse px-2"><i class="fa-solid fa-hand-pointer mr-1"></i> Chạm/kéo xếp theo: <span class="bg-orange-100 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-orange-700 inline-block mt-1 sm:mt-0">${d.data.type}</span></p>
+                    
+                    <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-4 sm:mb-8 p-3 sm:p-6 bg-white rounded-xl sm:rounded-3xl shadow-sm sm:shadow-md border border-indigo-100 relative max-w-[95%] mx-auto w-full" id="s-tar">
+                        <div class="absolute -top-3 -right-3 text-2xl sm:text-3xl transform rotate-12 bg-white rounded-full">🎯</div>
+                        ${slots}
+                    </div>
+                    
+                    <div class="flex flex-wrap justify-center gap-2 sm:gap-4 p-3 sm:p-4 bg-indigo-50/50 rounded-xl sm:rounded-2xl border-2 border-dashed border-indigo-200 max-w-[95%] mx-auto w-full" id="s-dock">${docks}</div>
+                    
+                    <div id="s-fb" class="text-center text-sm sm:text-xl font-bold mt-4 sm:mt-6 min-h-[3rem] transition-all px-2"></div>
+                    
+                    <div class="mt-auto flex justify-between gap-2 sm:gap-3 w-full pt-4 pb-2 px-2 sm:px-0">
+                        <div class="flex gap-2">
+                            <button class="bg-gray-200 hover:bg-gray-300 p-3 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl font-bold text-gray-700 hover-pop flex items-center justify-center" onclick="prevScreen()"><i class="fa-solid fa-arrow-left text-sm sm:text-base"></i></button>
+                            <button id="btn-skip" class="bg-red-100 hover:bg-red-200 py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl font-bold text-red-600 transition-all hover-pop text-xs sm:text-base flex items-center gap-1" onclick="skipScreen()" title="Bỏ qua màn này"><span class="hidden sm:inline">Bỏ qua</span> <i class="fa-solid fa-forward-step"></i></button>
+                        </div>
+                        <div class="flex gap-2 ml-auto">
+                            <button id="btn-chk" class="btn-primary" onclick="chkSort('${d.data.correct.join(',')}', '${d.skill}', '${d.data.hint.replace(/'/g, "\\'")}')">Chốt! <i class="fa-solid fa-check ml-1 hidden sm:inline"></i></button>
+                            <button id="btn-next" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-xl sm:rounded-2xl hidden shadow-[0_4px_0_#16a34a] active:translate-y-1 transition-all hover-pop text-sm sm:text-base flex items-center gap-1 sm:gap-2" onclick="nextScreen()">Tiếp! <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function initSortDragDrop() {
+            let drg = null;
+            document.querySelectorAll('.c-s').forEach(el => {
+                // Drag Events for Desktop (optional on mobile, but keep for hybrid)
+                el.ondragstart=function(e){
+                    drg=this; 
+                    setTimeout(()=>this.classList.add('opacity-50', 'scale-90'), 0);
+                    // Use dataTransfer to make drag image cleaner on desktop
+                    if(e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; }
+                };
+                el.ondragend=function(){
+                    this.classList.remove('opacity-50', 'scale-90'); 
+                    drg=null;
+                };
+                // Tap to move - PRIMARY INTERACTION FOR MOBILE
+                el.onclick=function(){
+                    if(this.parentNode.id==='s-dock'){ 
+                        let e=Array.from(document.querySelectorAll('.z-s')).find(z=>!z.children.length); 
+                        if(e) { 
+                            e.appendChild(this); 
+                            playSFX('pop'); 
+                            // Highlight effect
+                            this.classList.add('ring-4', 'ring-yellow-400');
+                            setTimeout(() => this.classList.remove('ring-4', 'ring-yellow-400'), 200);
+                        } else {
+                            // Target full, gently shake dock to indicate no space
+                            document.getElementById('s-tar').classList.add('shake-error');
+                            setTimeout(() => document.getElementById('s-tar').classList.remove('shake-error'), 300);
+                        }
+                    } else {
+                        document.getElementById('s-dock').appendChild(this); 
+                        playSFX('pop');
+                    }
+                };
+            });
+            document.querySelectorAll('.z-s').forEach(z => {
+                z.ondragover=e=>{e.preventDefault(); z.classList.add('drag-over');};
+                z.ondragleave=()=>z.classList.remove('drag-over');
+                z.ondrop=function(e){ 
+                    e.preventDefault(); 
+                    this.classList.remove('drag-over'); 
+                    if(drg){ 
+                        // Swap logic if target is occupied
+                        if(this.children.length) {
+                            document.getElementById('s-dock').appendChild(this.children[0]); 
+                        }
+                        this.appendChild(drg); 
+                        playSFX('pop');
+                    }
+                };
+            });
+            const dock = document.getElementById('s-dock');
+            if(dock) {
+                dock.ondragover=e=>e.preventDefault();
+                dock.ondrop=function(e){e.preventDefault(); if(drg) { this.appendChild(drg); playSFX('pop'); }};
+            }
+        }
+
+        function chkSort(ansStr, skill, hint) {
+            let cur = []; document.querySelectorAll('.z-s').forEach(z => { if(z.children.length) cur.push(z.children[0].dataset.v); });
+            const fb = document.getElementById('s-fb');
+            if(cur.length < 4) return speakText("Ế ế, cậu xếp sót thành viên kìa! Chạm thẻ để đưa lên kệ trống đi đã!");
+            if(cur.join(',') === ansStr) {
+                playSFX('correct'); updateSkill(skill, true); fb.innerHTML="<span class='text-green-500 animate-bounce block'><i class='fa-solid fa-medal mr-1 sm:mr-2 text-yellow-400'></i>Đỉnh của chóp! Đội hình đã xếp chuẩn không cần chỉnh! 🏆</span>"; 
+                speakText("Đỉnh của chóp! Đội hình đã được sắp xếp chuẩn không cần chỉnh!");
+                sessionData.score+=15; showNextBtn('btn-chk');
+            } else {
+                playSFX('wrong'); updateSkill(skill, false); currentStageErrors++; document.getElementById('s-tar').classList.add('shake-error'); setTimeout(()=>document.getElementById('s-tar').classList.remove('shake-error'),500);
+                if(currentStageErrors === 1) {
+                    fb.innerHTML = "<span class='text-red-500'><i class='fa-solid fa-circle-exclamation mr-1 sm:mr-2'></i>Đội hình hơi lộn xộn. Cậu dóng thẳng hàng phần nguyên rồi đến phần mười nhé!</span>";
+                    speakText("Khoan đã nào! Đội hình hơi lộn xộn. Cậu dóng thẳng hàng phần nguyên rồi mới đến phần mười nhé, giống như dóng hàng tập thể dục ấy!");
+                } else {
+                    fb.innerHTML = `<span class='text-indigo-600'><i class='fa-solid fa-magnifying-glass mr-1 sm:mr-2'></i>Gợi ý: ${hint}</span>`;
+                    speakText("Gợi ý của tớ: " + hint);
+                    logError(skill, 'sort_error', 'Sai sắp xếp');
+                }
+            }
+            saveTeacherData();
+        }
+
+        function renderInput(d) {
+            return `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 min-h-max bg-gradient-to-b from-white to-indigo-50/50">
+                    <h2 class="text-xl sm:text-3xl font-black text-indigo-800 mb-4 sm:mb-6 text-center drop-shadow-sm"><i class="fa-solid fa-ruler-combined text-blue-500 mr-2"></i>${d.title}</h2>
+                    <div class="bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl border-b-2 sm:border-b-4 border-indigo-200 max-w-lg mx-auto w-full flex flex-col items-center relative mt-4">
+                        <div class="absolute -top-4 -right-2 sm:-top-5 sm:right-5 text-3xl sm:text-4xl transform rotate-12 animate-pulse bg-white rounded-full">📏</div>
+                        <p class="text-xl sm:text-3xl font-black text-gray-800 mb-6 bg-gray-50 px-4 sm:px-6 py-2 rounded-xl border border-gray-200 shadow-inner text-center w-full">${d.data.q}</p>
+                        
+                        <div class="flex items-center gap-2 sm:gap-4 w-full">
+                            <input type="text" id="v-input" inputmode="decimal" class="w-full border-2 sm:border-4 border-indigo-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center text-2xl sm:text-4xl font-black text-indigo-900 focus:border-yellow-400 focus:outline-none transition-colors shadow-inner" placeholder="...">
+                            <span class="text-xl sm:text-3xl font-black text-white bg-indigo-500 px-3 py-2 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl shrink-0 shadow-md transform rotate-2">${d.data.unit}</span>
+                        </div>
+                    </div>
+                    <div id="i-fb" class="mt-4 sm:mt-6 px-2 text-center text-sm sm:text-xl font-bold min-h-[3rem] transition-all"></div>
+                    
+                    <div class="mt-auto flex justify-between gap-2 sm:gap-3 w-full pt-6 pb-2 px-2 sm:px-0">
+                        <div class="flex gap-2">
+                            <button class="bg-gray-200 hover:bg-gray-300 p-3 sm:py-3 sm:px-6 rounded-xl sm:rounded-2xl font-bold text-gray-700 hover-pop flex items-center justify-center" onclick="prevScreen()"><i class="fa-solid fa-arrow-left text-sm sm:text-base"></i></button>
+                            <button id="btn-skip" class="bg-red-100 hover:bg-red-200 py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl font-bold text-red-600 transition-all hover-pop text-xs sm:text-base flex items-center gap-1" onclick="skipScreen()" title="Bỏ qua màn này"><span class="hidden sm:inline">Bỏ qua</span> <i class="fa-solid fa-forward-step"></i></button>
+                        </div>
+                        <div class="flex gap-2 ml-auto">
+                            <button id="btn-chk" class="btn-primary" onclick="chkInput('${d.data.ans}', '${d.data.ansAlt}', '${d.skill}', '${d.data.hint.replace(/'/g, "\\'")}')">Truyền Phép! <i class="fa-solid fa-wand-magic-sparkles ml-1 hidden sm:inline"></i></button>
+                            <button id="btn-next" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-xl sm:rounded-2xl hidden shadow-[0_4px_0_#16a34a] active:translate-y-1 transition-all hover-pop text-sm sm:text-base flex items-center gap-1 sm:gap-2" onclick="nextScreen()">Tiếp! <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function attachInputFilters() {
+            document.querySelectorAll('input[type="text"]').forEach(inp => {
+                // Ensure commas are used for decimals on input
+                inp.oninput = function(){ this.value = this.value.replace(/\./g,',').replace(/[^0-9,]/g,''); };
+            });
+        }
+
+        function chkInput(ans, ansAlt, skill, hint) {
+            const val = document.getElementById('v-input').value.trim();
+            const fb = document.getElementById('i-fb');
+            if(!val) return speakText("Khoan! Cậu chưa niệm chú (nhập số) kìa!");
+
+            if(val === ans || val === ansAlt) {
+                playSFX('correct'); updateSkill(skill, true); fb.innerHTML = "<span class='text-green-500'><i class='fa-solid fa-hat-wizard mr-1 sm:mr-2'></i>Chính xác! Cậu quy đổi cực mượt luôn! ✨</span>";
+                speakText("Chính xác! Phép thuật biến đổi hoàn hảo!");
+                sessionData.score+=15; document.getElementById('v-input').disabled=true; document.getElementById('v-input').classList.add('bg-green-50', 'border-green-400'); showNextBtn('btn-chk');
+            } else {
+                playSFX('wrong'); updateSkill(skill, false); currentStageErrors++; document.getElementById('v-input').classList.add('shake-error'); setTimeout(()=>document.getElementById('v-input').classList.remove('shake-error'),500);
+                if(currentStageErrors === 1) {
+                    fb.innerHTML = "<span class='text-red-500'>Ối, phép thuật hơi lag! Nháp kẻ bảng đơn vị để đặt dấu phẩy cho chuẩn nhé.</span>";
+                    speakText("Ối, phép thuật hơi lag nhẹ! Lấy nháp ra kẻ bảng đơn vị để xem đặt dấu phẩy ở đâu cho bảnh nhé.");
+                } else {
+                    fb.innerHTML = `<span class='text-indigo-600 leading-tight block text-left sm:text-center'><i class='fa-regular fa-face-smile-wink mr-1'></i>Gợi ý: ${hint} <br><span class="inline-block mt-1">Đáp án bí mật: <span class="text-green-600 font-black px-2 bg-green-100 rounded">${ans}</span></span></span>`;
+                    speakText("Gợi ý của tớ nè: " + hint);
+                    document.getElementById('v-input').value = ans; showNextBtn('btn-chk');
+                    logError(skill, 'conversion_err', 'Sai đổi đơn vị');
+                }
+            }
+            saveTeacherData();
+        }
+
+        // --- BOSS SCREEN (Multi-step) ---
+        function renderBoss(d) {
+            return `
+                <div class="flex-1 flex flex-col p-4 sm:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-purple-900 to-black min-h-max relative overflow-x-hidden">
+                    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-30"></div>
+                    
+                    <div class="z-10 text-center mb-4 sm:mb-6">
+                        <i class="fa-solid fa-skull-crossbones text-red-500 text-3xl sm:text-4xl mb-1 sm:mb-2 animate-bounce"></i>
+                        <h2 class="text-xl sm:text-3xl font-black text-yellow-400 uppercase tracking-widest glow-effect bg-black/50 inline-block px-4 py-2 sm:px-8 sm:py-3 rounded-full border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.5)]">${d.title}</h2>
+                    </div>
+                    
+                    <div class="bg-white/95 backdrop-blur p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl border-2 sm:border-4 border-purple-500 max-w-2xl mx-auto w-full z-10 relative">
+                        <div class="absolute -top-4 -right-2 sm:-top-6 sm:-right-6 text-4xl sm:text-6xl animate-float">🎁</div>
+                        <div class="bg-purple-100 border-l-4 sm:border-l-8 border-purple-600 p-3 sm:p-5 rounded-r-lg sm:rounded-r-xl mb-4 sm:mb-6 shadow-inner">
+                            <p class="text-sm sm:text-xl font-bold text-purple-900 leading-snug">${d.data.context}</p>
+                            <div class="text-center w-full mt-2">
+                                <p class="text-2xl sm:text-4xl font-black text-red-600 mt-1 sm:mt-4 font-mono bg-white inline-block px-4 py-1 sm:px-6 sm:py-2 border-2 border-red-300 rounded-lg sm:rounded-xl shadow-md rotate-1">${d.data.weight}</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 1 -->
+                        <div id="boss-s1" class="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200">
+                            <p class="font-bold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-lg flex items-start"><i class="fa-solid fa-1 text-purple-500 bg-purple-100 w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 rounded-full mr-2 mt-0.5 sm:mt-0 text-xs sm:text-base"></i><span>Số thập phân tương ứng (kg) là:</span></p>
+                            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full">
+                                <div class="flex items-center gap-2 flex-1 min-w-[120px]">
+                                    <input type="text" id="b-inp-1" inputmode="decimal" class="w-full sm:w-40 border-2 sm:border-4 border-indigo-200 rounded-lg sm:rounded-xl p-2 sm:p-3 text-xl sm:text-2xl font-black text-center text-indigo-900 focus:border-indigo-500 shadow-inner"> 
+                                    <span class="font-black text-lg sm:text-xl text-gray-600 shrink-0">kg</span>
+                                </div>
+                                <button class="bg-indigo-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl font-black hover:bg-indigo-700 w-full sm:w-auto shadow-[0_4px_0_#4f46e5] active:translate-y-1 transition-all hover-pop text-sm sm:text-base mt-2 sm:mt-0" onclick="chkBoss(1)">Chốt <i class="fa-solid fa-lock ml-1"></i></button>
+                            </div>
+                            <div id="b-fb-1" class="mt-2 font-bold text-red-500 text-sm sm:text-base min-h-[1.5rem]"></div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div id="boss-s2" class="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200 hidden opacity-0 transition-opacity duration-700">
+                            <p class="font-bold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-lg flex items-start"><i class="fa-solid fa-2 text-purple-500 bg-purple-100 w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 rounded-full mr-2 mt-0.5 sm:mt-0 text-xs sm:text-base"></i><span><span class="text-purple-700">Làm tròn số vừa tìm được đến hàng phần mười</span> ta được:</span></p>
+                            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full">
+                                <div class="flex items-center gap-2 flex-1 min-w-[120px]">
+                                    <input type="text" id="b-inp-2" inputmode="decimal" class="w-full sm:w-40 border-2 sm:border-4 border-purple-200 rounded-lg sm:rounded-xl p-2 sm:p-3 text-xl sm:text-2xl font-black text-center text-purple-900 focus:border-purple-500 shadow-inner"> 
+                                    <span class="font-black text-lg sm:text-xl text-gray-600 shrink-0">kg</span>
+                                </div>
+                                <button class="bg-purple-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl font-black hover:bg-purple-700 w-full sm:w-auto shadow-[0_4px_0_#7e22ce] active:translate-y-1 transition-all hover-pop text-sm sm:text-base mt-2 sm:mt-0" onclick="chkBoss(2)">Chốt <i class="fa-solid fa-lock ml-1"></i></button>
+                            </div>
+                            <div id="b-fb-2" class="mt-2 font-bold text-red-500 text-sm sm:text-base min-h-[1.5rem]"></div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div id="boss-s3" class="bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200 hidden opacity-0 transition-opacity duration-700">
+                            <p class="font-bold text-gray-800 mb-3 sm:mb-4 text-sm sm:text-lg flex items-start"><i class="fa-solid fa-3 text-purple-500 bg-purple-100 w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center shrink-0 rounded-full mr-2 mt-0.5 sm:mt-0 text-xs sm:text-base"></i><span>Khối lượng (đã làm tròn) có lọt qua cửa (từ 3,4 đến 3,8) không?</span></p>
+                            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                                <button class="flex-1 bg-white border-2 sm:border-4 border-gray-200 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-base sm:text-xl text-gray-600 hover:bg-green-50 hover:border-green-400 hover:text-green-700 hover-pop transition-all" onclick="chkBoss(3, 'có')"><i class="fa-solid fa-thumbs-up mr-2 text-green-500"></i>Hợp lệ nha</button>
+                                <button class="flex-1 bg-white border-2 sm:border-4 border-gray-200 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-base sm:text-xl text-gray-600 hover:bg-red-50 hover:border-red-400 hover:text-red-700 hover-pop transition-all" onclick="chkBoss(3, 'không')"><i class="fa-solid fa-ban mr-2 text-red-500"></i>Không hợp lệ</button>
+                            </div>
+                            <div id="b-fb-3" class="mt-3 sm:mt-4 text-center font-bold text-base sm:text-xl min-h-[2rem]"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto flex flex-wrap justify-between gap-2 sm:gap-3 w-full pt-6 pb-2 px-2 sm:px-0 z-10">
+                        <button id="btn-skip" class="bg-red-900/50 hover:bg-red-800 py-2.5 px-3 sm:py-3 sm:px-4 rounded-xl sm:rounded-2xl font-bold text-red-200 border border-red-700 transition-all hover-pop text-xs sm:text-base" onclick="skipScreen()" title="Bỏ qua màn này"><i class="fa-solid fa-flag text-xs sm:text-sm mr-1"></i> Bỏ qua Boss</button>
+                        <button id="btn-next" class="btn-primary hidden ml-auto animate-pulse text-sm sm:text-xl px-4 sm:px-8 py-2.5 sm:py-3" onclick="nextScreen()">Nhận Thưởng Quán Quân! <i class="fa-solid fa-crown ml-1 sm:ml-2"></i></button>
+                    </div>
+                </div>`;
+        }
+
+        function chkBoss(step, valStr) {
+            const fb = document.getElementById(`b-fb-${step}`);
+            if(step === 1) {
+                const v = document.getElementById('b-inp-1').value.trim();
+                if(!v) return speakText("Cậu chưa nhập cân nặng kìa!");
+                if(v === "3,54" || v === "3,540") {
+                    playSFX('correct'); fb.innerHTML = "<span class='text-green-600'><i class='fa-solid fa-check-circle mr-1'></i>Quá mượt!</span>"; 
+                    document.getElementById('b-inp-1').disabled=true; document.getElementById('b-inp-1').classList.add('bg-green-50');
+                    const s2 = document.getElementById('boss-s2'); s2.classList.remove('hidden'); setTimeout(()=>s2.classList.remove('opacity-0'),50);
+                    // Scroll down a bit on mobile to show new step
+                    if(window.innerWidth < 640) setTimeout(()=>document.getElementById('app-container').scrollBy({top: 150, behavior: 'smooth'}), 100);
+                    speakText("Quá đỉnh! Khởi đầu êm ru. Bước 2: Cậu hãy trổ tài làm tròn số đó đến hàng phần mười nhé."); updateSkill('boss', true);
+                } else { 
+                    playSFX('wrong'); fb.innerHTML = "<i class='fa-solid fa-xmark-circle mr-1'></i>Ối, nhầm xíu rồi! Nhớ 540g = 540 phần nghìn kg nha."; 
+                    updateSkill('boss', false); 
+                }
+            } else if(step === 2) {
+                const v = document.getElementById('b-inp-2').value.trim();
+                if(!v) return speakText("Cậu chưa làm tròn số kìa!");
+                if(v === "3,5") {
+                    playSFX('correct'); fb.innerHTML = "<span class='text-green-600'><i class='fa-solid fa-check-circle mr-1'></i>Chuẩn không cần chỉnh!</span>"; 
+                    document.getElementById('b-inp-2').disabled=true; document.getElementById('b-inp-2').classList.add('bg-green-50');
+                    const s3 = document.getElementById('boss-s3'); s3.classList.remove('hidden'); setTimeout(()=>s3.classList.remove('opacity-0'),50);
+                    if(window.innerWidth < 640) setTimeout(()=>document.getElementById('app-container').scrollBy({top: 200, behavior: 'smooth'}), 100);
+                    speakText("Bùm! Làm tròn siêu xuất sắc. Bước chốt hạ: So sánh xem khối lượng này có lọt qua cửa kiểm duyệt không?"); updateSkill('boss', true);
+                } else { 
+                    playSFX('wrong'); fb.innerHTML = "<i class='fa-solid fa-xmark-circle mr-1'></i>Từ từ thôi! Hàng phần trăm là 4 (<5) thì hàng phần mười giữ nguyên chứ!"; 
+                    updateSkill('boss', false); 
+                }
+            } else if(step === 3) {
+                if(valStr === 'có') {
+                    playSFX('correct'); 
+                    fb.innerHTML = "<span class='text-green-500 animate-bounce block text-lg sm:text-2xl drop-shadow'>BÙM CHÍU! 🎆 Cậu đã diệt gọn Boss!</span>";
+                    speakText("Bùm chíu! Cậu phân tích sắc bén như thám tử Conan! Cậu đã chính thức vượt qua Đấu trường Tổng ôn!");
+                    sessionData.score += 30; sessionData.badges.push("Quán Quân Số Thập Phân"); updateSkill('boss', true);
+                    showNextBtn();
+                } else { 
+                    playSFX('wrong'); fb.innerHTML = "<span class='text-red-500'><i class='fa-solid fa-xmark-circle mr-1'></i>Lỗi so sánh phút chót! Xem lại 5 đứng giữa 4 và 8 nha?</span>"; 
+                    updateSkill('boss', false); 
+                }
+            }
+            saveTeacherData();
+        }
+
+        function renderSummary(d) {
+            const timeDiff = Math.floor((new Date() - sessionStartTime) / 1000);
+            sessionData.timeSpent += timeDiff;
+            const min = Math.floor(sessionData.timeSpent / 60); const sec = sessionData.timeSpent % 60;
+            
+            // Generate Skill bars
+            let skillBars = '';
+            const skillNames = { readWrite: "Cấu tạo số", compare: "So sánh", measure: "Đo lường", round: "Làm tròn", boss: "Tư duy chuỗi" };
+            for(let key in sessionData.skills) {
+                const s = sessionData.skills[key];
+                const pct = s.t === 0 ? 0 : Math.round((s.c / s.t) * 100);
+                let color = pct >= 80 ? 'bg-gradient-to-r from-green-400 to-green-500' : pct >= 50 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : 'bg-gradient-to-r from-red-400 to-red-500';
+                skillBars += `
+                    <div class="mb-2 sm:mb-3 shrink-0">
+                        <div class="flex justify-between items-center text-xs sm:text-sm font-black text-indigo-900 mb-1"><span>${skillNames[key]}</span><span class="bg-indigo-100 px-1.5 sm:px-2 rounded">${pct}%</span></div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 sm:h-4 shadow-inner border border-gray-300"><div class="${color} h-full rounded-full transition-all duration-1000 w-0" style="width: ${pct}%"></div></div>
+                    </div>`;
+            }
+
+            speakText(`Chà chà, xuất sắc luôn! Cậu đã gom được ${sessionData.score} điểm kinh nghiệm. Bảng vàng vinh danh cậu nè, mau khoe thầy cô nha!`);
+            saveTeacherData();
+
+            return `
+                <div class="flex-1 flex flex-col items-center justify-start py-8 px-4 sm:p-8 bg-arena overflow-y-auto overflow-x-hidden relative w-full min-h-full">
+                    <!-- Confetti background effect (CSS simplified) -->
+                    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                        <div class="absolute top-10 left-5 sm:left-10 text-2xl sm:text-4xl animate-bounce" style="animation-delay: 0.1s">✨</div>
+                        <div class="absolute top-20 right-5 sm:right-20 text-xl sm:text-3xl animate-bounce" style="animation-delay: 0.5s">🎊</div>
+                        <div class="absolute bottom-20 left-1/4 text-3xl sm:text-5xl animate-bounce" style="animation-delay: 0.3s">🎉</div>
+                    </div>
+
+                    <h1 class="shrink-0 mt-auto text-2xl sm:text-4xl font-black text-yellow-400 mb-4 sm:mb-6 text-center glow-effect bg-indigo-900/80 px-4 sm:px-8 py-2 sm:py-3 rounded-full border border-yellow-400/50 z-10 shadow-xl max-w-[95%]">BẢNG VÀNG VINH DANH</h1>
+                    
+                    <div class="shrink-0 bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] w-[95%] max-w-2xl border-4 sm:border-8 border-yellow-400 relative z-10 transform hover:scale-[1.01] transition-transform">
+                        ${sessionData.badges.length > 0 ? `
+                        <div class="absolute -top-10 -right-4 sm:-top-16 sm:-right-12 transform rotate-12 z-20 animate-float scale-[0.65] sm:scale-100 origin-top-right">
+                            <div class="bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-600 rounded-full w-28 h-28 sm:w-36 sm:h-36 flex flex-col items-center justify-center shadow-[0_10px_25px_rgba(234,179,8,0.6)] border-4 border-white">
+                                <i class="fa-solid fa-medal text-4xl sm:text-6xl text-white drop-shadow-md"></i>
+                                <span class="text-[10px] sm:text-xs font-black text-yellow-900 text-center leading-tight mt-1 px-1 sm:px-2 drop-shadow-sm">QUÁN QUÂN<br>SỐ THẬP PHÂN</span>
+                            </div>
+                        </div>` : ''}
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-5 sm:mb-8 mt-4 sm:mt-2">
+                            <div class="bg-gradient-to-b from-indigo-50 to-white p-3 sm:p-5 rounded-xl sm:rounded-2xl text-center border-2 border-indigo-200 shadow-sm flex flex-col items-center justify-center">
+                                <p class="text-gray-500 font-black mb-1 uppercase tracking-wider text-[11px] sm:text-sm"><i class="fa-solid fa-star text-yellow-500 mr-1"></i> Điểm Kỹ Năng</p>
+                                <p class="text-5xl sm:text-6xl font-black text-indigo-700 drop-shadow-sm">${sessionData.score}</p>
+                            </div>
+                            <div class="bg-gradient-to-b from-indigo-50 to-white p-3 sm:p-5 rounded-xl sm:rounded-2xl text-center border-2 border-indigo-200 shadow-sm flex flex-col items-center justify-center">
+                                <p class="text-gray-500 font-black mb-1 uppercase tracking-wider text-[11px] sm:text-sm"><i class="fa-solid fa-stopwatch text-blue-500 mr-1"></i> Tốc độ chốt đơn</p>
+                                <p class="text-3xl sm:text-4xl font-black text-indigo-700 mt-1 sm:mt-3 drop-shadow-sm">${min}p ${sec}s</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t-2 sm:border-t-4 border-dashed border-gray-200 pt-4 sm:pt-6">
+                            <h3 class="font-black text-indigo-900 text-lg sm:text-2xl mb-3 sm:mb-5 text-center"><i class="fa-solid fa-chart-pie text-indigo-500 mr-2"></i> Hồ Sơ Sức Mạnh:</h3>
+                            ${skillBars}
+                        </div>
+                    </div>
+                    <button class="shrink-0 mb-auto mt-6 sm:mt-10 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-black py-3 px-6 sm:py-4 sm:px-10 rounded-full shadow-[0_4px_0_#ca8a04] sm:shadow-[0_6px_0_#ca8a04] active:translate-y-2 active:shadow-none transition-all text-lg sm:text-2xl z-10 border-2 sm:border-4 border-white" onclick="location.reload()">Chinh Phục Lại Nào! <i class="fa-solid fa-rotate-right ml-1 sm:ml-2"></i></button>
+                </div>`;
+        }
+
+        // --- TM & Storage ---
+        function logError(skill, type, det) { sessionData.errorsLogged.push({ stage: skill, errorType: type, detail: det, time: new Date().toISOString() }); }
+        function saveTeacherData() { localStorage.setItem(APP_ID + '_cur', JSON.stringify(sessionData)); }
+        function loadTeacherData() { if(!localStorage.getItem(APP_ID + '_hist')) localStorage.setItem(APP_ID + '_hist', JSON.stringify([])); }
+        
+        function handleTeacherTrigger() {
+            clickCountForTeacher++; clearTimeout(teacherTimer); teacherTimer = setTimeout(()=>clickCountForTeacher=0, 2000);
+            if(clickCountForTeacher>=5) { clickCountForTeacher=0; openTM(); }
+        }
+        function openTM() {
+            document.getElementById('teacher-modal').classList.remove('hidden');
+            const cur = JSON.parse(localStorage.getItem(APP_ID + '_cur') || JSON.stringify(sessionData));
+            document.getElementById('tm-avg').innerText = cur.score;
+            document.getElementById('tm-time').innerText = Math.floor(cur.timeSpent/60) + 'p';
+            
+            ['readWrite', 'compare', 'measure', 'round'].forEach((k,i) => {
+                const ids = ['tm-skill-read', 'tm-skill-compare', 'tm-skill-measure', 'tm-skill-round'];
+                const s = cur.skills[k];
+                document.getElementById(ids[i]).innerText = s && s.t > 0 ? Math.round((s.c/s.t)*100)+'%' : '0%';
+            });
+
+            document.getElementById('tm-error-list').innerHTML = cur.errorsLogged.map(e=>`<li class="bg-red-50 p-2 border border-red-100 rounded text-sm"><span class="font-bold text-red-700">[${e.stage}]</span> ${e.detail}</li>`).join('') || "<li class='text-gray-500 italic'>Chưa có lỗi</li>";
+            
+            // Fix tabs style on modal open
+            switchTeacherTab('stats');
+        }
+        function closeTeacherMode() { document.getElementById('teacher-modal').classList.add('hidden'); }
+        function switchTeacherTab(id) { 
+            ['stats','errors','objectives'].forEach(i => {
+                document.getElementById('tab-'+i).classList.add('hidden');
+                document.getElementById('btn-tab-'+i).classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600');
+                document.getElementById('btn-tab-'+i).classList.add('text-gray-500');
+            }); 
+            document.getElementById('tab-'+id).classList.remove('hidden'); 
+            document.getElementById('btn-tab-'+id).classList.remove('text-gray-500');
+            document.getElementById('btn-tab-'+id).classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600');
+        }
+        
+        function exportData(type) {
+            const cur = JSON.parse(localStorage.getItem(APP_ID + '_cur') || JSON.stringify(sessionData));
+            let dataStr = "", mime = "";
+            if(type === 'json') {
+                dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cur, null, 2)); mime = "robo_phay_tram5_data.json";
+            } else if (type === 'csv') {
+                let csv = "Time,Skill,Error Type,Detail\n"; cur.errorsLogged.forEach(e => csv += `${e.time},${e.stage},${e.errorType},"${e.detail}"\n`);
+                dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); mime = "robo_phay_tram5_errors.csv";
+            }
+            const node = document.createElement('a'); node.setAttribute("href", dataStr); node.setAttribute("download", mime);
+            document.body.appendChild(node); node.click(); node.remove();
+        }
+        
+        function resetData() { 
+            localStorage.removeItem(APP_ID + '_hist'); 
+            localStorage.removeItem(APP_ID + '_cur'); 
+            const btn = document.getElementById('btn-reset-data');
+            btn.innerText = "Đã Xóa!";
+            btn.classList.replace('bg-red-500', 'bg-gray-500');
+            setTimeout(() => { location.reload(); }, 1000);
+        }
+
+        function unlockAPI() {
+            const p = document.getElementById('api-password').value.trim();
+            if(p === atob(ENCRYPTED_PAYLOAD).split('|')[0]) { 
+                gcpApiKey = atob(ENCRYPTED_PAYLOAD).split('|')[1]; 
+                document.getElementById('auth-modal').classList.add('hidden'); 
+                showToast("Đã kích hoạt quyền năng đọc giọng chuẩn!", "success");
+                initApp(); 
+            }
+            else { 
+                document.getElementById('api-password').classList.add('shake-error'); 
+                setTimeout(()=>document.getElementById('api-password').classList.remove('shake-error'), 500); 
+            }
+        }
+
+        function skipAuth() { 
+            document.getElementById('auth-modal').classList.add('hidden'); 
+            showToast("Bỏ qua xác thực. Sẽ dùng giọng mặc định của máy!", "info");
+            initApp(); 
+        }
+
+        window.onload = () => { 
+            const pwdInput = document.getElementById('api-password');
+            if(pwdInput) {
+                pwdInput.onkeypress = e => { if(e.key === 'Enter') unlockAPI(); };
+            }
+        };
+    </script>
+</body>
+</html>
+
+<!-- ===== MOBILE/TABLET ONLY PATCH - DESKTOP GIỮ NGUYÊN =====
+     Code gốc Trạm 5 ở phía trên được giữ nguyên nguyên vẹn.
+     Patch này chỉ tác động khi thiết bị là mobile/tablet hoặc màn hình nhỏ.
+     Trên web/máy tính desktop, giao diện gốc không bị đổi.
+============================================================= -->
+<style id="tram5-mobile-tablet-only-patch">
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  :root{
+    --tram5-vh:100dvh;
+    --tram5-header:68px;
+    --tram5-safe-top:env(safe-area-inset-top,0px);
+    --tram5-safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+
+  html,body{
+    width:100%!important;
+    min-width:0!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    margin:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+    -webkit-text-size-adjust:100%!important;
+  }
+
+  body{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    touch-action:manipulation!important;
+  }
+
+  body>.fixed.top-0{
+    position:fixed!important;
+    top:var(--tram5-safe-top)!important;
+    left:50%!important;
+    transform:translateX(-50%)!important;
+    width:100%!important;
+    max-width:56rem!important;
+    min-height:46px!important;
+    height:auto!important;
+    z-index:1000!important;
+    background:linear-gradient(180deg,rgba(30,27,75,.96),rgba(30,27,75,.72))!important;
+    backdrop-filter:blur(10px)!important;
+    border-bottom:1px solid rgba(250,204,21,.16)!important;
+    padding-left:max(.5rem,env(safe-area-inset-left,0px))!important;
+    padding-right:max(.5rem,env(safe-area-inset-right,0px))!important;
+  }
+
+  #app-container{
+    width:min(100vw,56rem)!important;
+    max-width:56rem!important;
+    height:calc(var(--tram5-vh) - var(--tram5-header) - var(--tram5-safe-bottom))!important;
+    max-height:calc(var(--tram5-vh) - var(--tram5-header) - var(--tram5-safe-bottom))!important;
+    min-height:0!important;
+    margin-top:var(--tram5-header)!important;
+    margin-bottom:0!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+    box-sizing:border-box!important;
+  }
+
+  #app-container *{
+    box-sizing:border-box!important;
+    min-width:0;
+  }
+
+  #app-container>div{
+    min-height:100%!important;
+  }
+
+  #app-container .overflow-y-auto,
+  #app-container .overflow-auto,
+  #app-container .hide-scrollbar,
+  #tab-stats,
+  #tab-errors,
+  #tab-objectives{
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-y:contain!important;
+    touch-action:pan-y!important;
+  }
+
+  button,input,select,textarea{
+    touch-action:manipulation!important;
+  }
+
+  .drag-card,
+  .drop-zone,
+  .c-s,
+  .z-s{
+    -webkit-tap-highlight-color:transparent!important;
+  }
+
+  .drag-card,
+  .c-s{
+    touch-action:manipulation!important;
+    -webkit-user-select:none!important;
+    user-select:none!important;
+  }
+
+  .drop-zone,
+  .z-s{
+    touch-action:manipulation!important;
+  }
+
+  #teacher-modal,
+  #auth-modal{
+    height:100dvh!important;
+    max-height:100dvh!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding-top:max(1rem,env(safe-area-inset-top,0px))!important;
+    padding-bottom:max(1rem,env(safe-area-inset-bottom,0px))!important;
+    padding-left:1rem!important;
+    padding-right:1rem!important;
+  }
+
+  #teacher-modal>div,
+  #auth-modal>div{
+    max-height:calc(100dvh - 2rem)!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  #teacher-modal .flex.border-b{
+    overflow-x:auto!important;
+    white-space:nowrap!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  #toast-container{
+    left:.75rem!important;
+    right:.75rem!important;
+    bottom:max(.75rem,env(safe-area-inset-bottom,0px))!important;
+    align-items:stretch!important;
+  }
+
+  #toast-container>*{
+    max-width:100%!important;
+    width:auto!important;
+  }
+}
+
+@media (max-width: 640px) {
+  :root{--tram5-header:56px}
+
+  body>.fixed.top-0{
+    padding-top:.35rem!important;
+    padding-bottom:.35rem!important;
+  }
+
+  body>.fixed.top-0 button{
+    min-width:36px!important;
+    min-height:36px!important;
+  }
+
+  body>.fixed.top-0 span{
+    max-width:150px!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+
+  #app-container{
+    width:100vw!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-bottom:0!important;
+    border-radius:1.2rem 1.2rem 0 0!important;
+  }
+
+  #app-container .speech-bubble{
+    max-width:94vw!important;
+  }
+
+  #app-container .btn-primary,
+  #app-container .btn-choice{
+    font-size:.95rem!important;
+    border-radius:1rem!important;
+  }
+
+  #app-container input[type="text"],
+  #app-container input[type="password"]{
+    font-size:20px!important;
+  }
+
+  #app-container .z-s,
+  #app-container .c-s,
+  #app-container .drop-zone,
+  #app-container .drag-card{
+    min-width:4.5rem!important;
+  }
+
+  #app-container .grid{
+    width:100%!important;
+  }
+
+  #app-container .sticky.top-0{
+    top:0!important;
+  }
+}
+
+@media (min-width:641px) and (max-width:1024px) {
+  :root{--tram5-header:74px}
+
+  #app-container{
+    width:min(96vw,56rem)!important;
+    border-radius:1.5rem!important;
+  }
+}
+
+@media (max-height:560px) and (orientation:landscape) {
+  :root{--tram5-header:48px}
+
+  body>.fixed.top-0{
+    padding-top:.25rem!important;
+    padding-bottom:.25rem!important;
+  }
+
+  body>.fixed.top-0 button{
+    width:34px!important;
+    height:34px!important;
+  }
+
+  #app-container{
+    border-radius:.9rem .9rem 0 0!important;
+  }
+
+  #app-container .text-6xl,
+  #app-container .sm\:text-7xl,
+  #app-container .sm\:text-8xl{
+    font-size:3.25rem!important;
+  }
+}
+</style>
+
+<script id="tram5-mobile-tablet-only-script">
+(function(){
+  "use strict";
+
+  function shouldPatch(){
+    return window.matchMedia("(max-width: 1024px)").matches ||
+           window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+  }
+
+  const root=document.documentElement;
+
+  function vh(){
+    return Math.round((window.visualViewport&&window.visualViewport.height)||window.innerHeight||document.documentElement.clientHeight||0);
+  }
+
+  function header(){
+    return document.querySelector("body>.fixed.top-0");
+  }
+
+  function app(){
+    return document.getElementById("app-container");
+  }
+
+  function fit(){
+    if(!shouldPatch()) return;
+
+    const a=app(),h=header(),v=vh();
+    if(v)root.style.setProperty("--tram5-vh",v+"px");
+
+    let hh=58;
+    if(h){
+      const r=h.getBoundingClientRect();
+      hh=Math.max(46,Math.ceil(r.height||hh));
+    }
+
+    const gap=innerWidth<=640?8:14;
+    const off=hh+gap;
+    root.style.setProperty("--tram5-header",off+"px");
+
+    if(a&&v){
+      a.style.marginTop=off+"px";
+      a.style.height="calc("+v+"px - "+off+"px - env(safe-area-inset-bottom,0px))";
+      a.style.maxHeight=a.style.height;
+      a.style.overflowY="auto";
+      a.style.overflowX="hidden";
+      a.style.webkitOverflowScrolling="touch";
+      a.style.touchAction="pan-y";
+    }
+
+    document.querySelectorAll("#app-container .overflow-y-auto,#app-container .overflow-auto,#app-container .hide-scrollbar,#tab-stats,#tab-errors,#tab-objectives").forEach(el=>{
+      el.style.webkitOverflowScrolling="touch";
+      el.style.overscrollBehavior="contain";
+      el.style.touchAction="pan-y";
+    });
+  }
+
+  function later(){
+    if(!shouldPatch()) return;
+    fit();
+    setTimeout(fit,80);
+    setTimeout(fit,260);
+  }
+
+  function patchRender(){
+    if(!shouldPatch()) return;
+
+    if(typeof window.renderScreen==="function"&&!window.__tram5_resp_render){
+      const old=window.renderScreen;
+      window.renderScreen=function(){
+        const r=old.apply(this,arguments);
+        later();
+        const a=app();
+        if(a)a.scrollTop=0;
+        return r;
+      };
+      window.__tram5_resp_render=true;
+    }
+  }
+
+  function patchFlow(){
+    if(!shouldPatch()) return;
+
+    ["unlockAPI","skipAuth","openTM","closeTeacherMode","nextScreen","prevScreen","skipScreen","goHome"].forEach(n=>{
+      if(typeof window[n]==="function"&&!window[n].__resp){
+        const old=window[n];
+        const w=function(){
+          const r=old.apply(this,arguments);
+          later();
+          return r;
+        };
+        w.__resp=true;
+        window[n]=w;
+      }
+    });
+  }
+
+  function reinforceMobileInteractions(){
+    if(!shouldPatch()) return;
+
+    setTimeout(()=>{
+      document.querySelectorAll(".drag-card,.c-s").forEach(el=>{
+        el.style.touchAction="manipulation";
+        el.style.webkitUserSelect="none";
+        el.style.userSelect="none";
+        el.style.webkitTapHighlightColor="transparent";
+      });
+      document.querySelectorAll(".drop-zone,.z-s").forEach(el=>{
+        el.style.touchAction="manipulation";
+        el.style.webkitTapHighlightColor="transparent";
+      });
+    },40);
+  }
+
+  function boot(){
+    if(!shouldPatch()) return;
+    patchRender();
+    patchFlow();
+    later();
+    reinforceMobileInteractions();
+  }
+
+  addEventListener("resize",later,{passive:true});
+  addEventListener("orientationchange",()=>{setTimeout(later,120);setTimeout(later,450)},{passive:true});
+
+  if(window.visualViewport){
+    visualViewport.addEventListener("resize",later,{passive:true});
+    visualViewport.addEventListener("scroll",later,{passive:true});
+  }
+
+  document.addEventListener("DOMContentLoaded",boot);
+  addEventListener("load",boot);
+
+  document.addEventListener("click",()=>{setTimeout(later,30);reinforceMobileInteractions()},true);
+  document.addEventListener("touchstart",()=>setTimeout(fit,30),{passive:true,capture:true});
+
+  if(window.ResizeObserver){
+    addEventListener("load",()=>{
+      if(!shouldPatch()) return;
+      const ro=new ResizeObserver(later);
+      const a=app(),h=header();
+      if(a)ro.observe(a);
+      if(h)ro.observe(h);
+    });
+  }
+
+  if(window.MutationObserver){
+    addEventListener("load",()=>{
+      if(!shouldPatch()) return;
+      const a=app();
+      if(a)new MutationObserver(()=>{fit();reinforceMobileInteractions()}).observe(a,{childList:true,subtree:true,attributes:true});
+    });
+  }
+})();
+</script>
+
